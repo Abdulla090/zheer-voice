@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Wand2, Check, Copy, Sparkles } from 'lucide-react';
 import { improveText } from '../../services/geminiService';
 import FormattedText from '../components/FormattedText';
+import { incrementStat } from '../../services/usageService';
 
 const GrammarPage: React.FC = () => {
     const [inputText, setInputText] = useState('');
@@ -20,6 +21,7 @@ const GrammarPage: React.FC = () => {
         try {
             const result = await improveText(apiKey, 'gemini-2.5-flash', inputText, 'fix_grammar');
             setFixedText(result);
+            incrementStat('grammarCount');
         } catch (e) {
             console.error(e);
             alert("کێشەیەک ڕوویدا.");

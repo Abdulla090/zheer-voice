@@ -13,6 +13,7 @@
     "framer-motion": "^12.23.26",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.561.0",
+    "pdfjs-dist": "^4.10.38",
     "react": "^19.2.2",
     "react-dom": "^19.2.2",
     "react-router-dom": "^7.10.1"

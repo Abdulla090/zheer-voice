@@ -1,10 +1,16 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AudioWaveform, Mic, Image as ImageIcon, Wand2, Zap, ChevronLeft, Languages } from 'lucide-react';
+import { getStats, AppStats } from '../../services/usageService';
 
 const HomePage: React.FC = () => {
+    const [usageStats, setUsageStats] = useState<AppStats | null>(null);
+
+    useEffect(() => {
+        setUsageStats(getStats());
+    }, []);
 
     const features = [
         {
@@ -65,9 +71,9 @@ const HomePage: React.FC = () => {
     ];
 
     const stats = [
-        { label: 'دەنگی دروستکراو', value: '0', icon: <AudioWaveform size={16} />, change: '+0%' },
-        { label: 'وەرگێڕان', value: '0', icon: <Mic size={16} />, change: '+0%' },
-        { label: 'وێنەی سکێنکراو', value: '0', icon: <ImageIcon size={16} />, change: '+0%' },
+        { label: 'دەنگی دروستکراو', value: usageStats?.ttsCount || 0, icon: <AudioWaveform size={16} />, change: '+100%' },
+        { label: 'وەرگێڕان', value: usageStats?.translationCount || 0, icon: <Languages size={16} />, change: '+100%' },
+        { label: 'وێنەی سکێنکراو', value: usageStats?.ocrCount || 0, icon: <ImageIcon size={16} />, change: '+100%' },
     ];
 
     // ============================================
@@ -76,7 +82,7 @@ const HomePage: React.FC = () => {
     const MobileView = () => (
         <div className="lg:hidden flex flex-col gap-6 py-4">
             <div className="text-center mb-4">
-                <h1 className="text-2xl font-black text-white">ژیرساز</h1>
+                <h1 className="text-2xl font-black text-white">ژیر ساز ڤۆیس</h1>
                 <p className="text-sm text-slate-400">ئامرازەکانی زیرەکی دەستکرد</p>
             </div>
 
@@ -107,7 +113,7 @@ const HomePage: React.FC = () => {
                 {/* Welcome */}
                 <div>
                     <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">داشبۆرد</p>
-                    <h1 className="text-2xl font-black text-white">بەخێربێیت بۆ <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-soran-400">ژیرساز</span></h1>
+                    <h1 className="text-2xl font-black text-white">بەخێربێیت بۆ <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-soran-400">ژیر ساز ڤۆیس</span></h1>
                     <p className="text-sm text-slate-400 mt-1">کۆمەڵێک ئامرازی AI بۆ زمانی کوردی</p>
                 </div>
 
@@ -216,14 +222,6 @@ const HomePage: React.FC = () => {
                     </div>
                 </Link>
 
-            </div>
-
-            {/* Footer Badge */}
-            <div className="text-center pt-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/30 border border-white/5 text-slate-500 text-[10px] tracking-widest uppercase">
-                    <Zap size={12} className="text-indigo-400" />
-                    Powered by Google Gemini 2.0 Flash
-                </div>
             </div>
 
         </div>

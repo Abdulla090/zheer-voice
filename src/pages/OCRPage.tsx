@@ -1,65 +1,163 @@
 
-import React, { useState } from 'react';
-import { Image as ImageIcon, Upload, ScanLine, Trash2, Copy, CheckCircle, Zap, SpellCheck } from 'lucide-react';
-import { extractTextFromImage } from '../../services/geminiService';
+import React, { useState, useRef } from 'react';
+import { Image as ImageIcon, Upload, ScanLine, Trash2, Copy, CheckCircle, Zap, SpellCheck, Volume2, Square, FileText } from 'lucide-react';
+import { extractTextFromImage, generateSpeech } from '../../services/geminiService';
 import { saveToHistory } from '../../services/storageService';
+import { getAudioContext } from '../../services/audioUtils';
+import { pdfToImages } from '../../services/pdfUtils';
+import { incrementStat } from '../../services/usageService';
 
 const OCRPage: React.FC = () => {
-    const [image, setImage] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [images, setImages] = useState<File[]>([]);
+    const [previews, setPreviews] = useState<string[]>([]);
     const [extractedText, setExtractedText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [processingIndex, setProcessingIndex] = useState(-1);
+    const [pdfTotalPages, setPdfTotalPages] = useState(0);
+    const [pdfCurrentPage, setPdfCurrentPage] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [fixKurdishLetters, setFixKurdishLetters] = useState(false); // OFF by default for fast mode
+
+    // Read Aloud state
+    const [isReading, setIsReading] = useState(false);
+    const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
     const apiKey = localStorage.getItem('gemini_api_key');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         setError(null);
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            if (file.type.startsWith('image/')) {
-                setImage(file);
-                setPreviewUrl(URL.createObjectURL(file));
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
+            const imageFiles = files.filter((f: File) => f.type.startsWith('image/') || f.type === 'application/pdf');
+
+            if (imageFiles.length > 0) {
+                setImages(imageFiles);
+                const newPreviews = imageFiles.map((f: File) => f.type === 'application/pdf' ? 'pdf_placeholder' : URL.createObjectURL(f));
+                setPreviews(newPreviews);
                 setExtractedText('');
             } else {
-                setError("تەنها وێنە.");
+                setError("تەنها وێنە و پۆڵێنی PDF.");
             }
         }
     };
 
     const handleScan = async () => {
-        if (!image || !apiKey) {
+        if (images.length === 0 || !apiKey) {
             if (!apiKey) setError("کلیلی API داخل بکە.");
             return;
         }
 
         setIsProcessing(true);
         setError(null);
+        let consolidatedText = '';
 
-        const reader = new FileReader();
-        reader.readAsDataURL(image);
-        reader.onloadend = async () => {
-            const base64Data = reader.result?.toString().split(',')[1];
-            if (base64Data) {
-                try {
-                    const text = await extractTextFromImage(apiKey, base64Data, image.type, fixKurdishLetters);
-                    setExtractedText(text);
-                    saveToHistory({ id: Date.now().toString(), type: 'OCR', content: text, timestamp: new Date() });
-                } catch {
-                    setError("کێشەیەک ڕوویدا.");
-                } finally {
-                    setIsProcessing(false);
+        try {
+            for (let i = 0; i < images.length; i++) {
+                setProcessingIndex(i);
+                const file = images[i];
+
+                if (file.type === 'application/pdf') {
+                    const pdfPages = await pdfToImages(file);
+                    setPdfTotalPages(pdfPages.length);
+                    consolidatedText += (images.length > 1 ? `\n--- [PDF: ${file.name}] ---\n` : '');
+
+                    for (let p = 0; p < pdfPages.length; p++) {
+                        setPdfCurrentPage(p + 1);
+                        const page = pdfPages[p];
+                        const text = await extractTextFromImage(apiKey, page.base64, page.type, fixKurdishLetters);
+                        consolidatedText += `\n[پەڕەی ${p + 1}]\n${text}\n`;
+                        setExtractedText(consolidatedText);
+                    }
+                    setPdfTotalPages(0);
+                    setPdfCurrentPage(0);
+                } else {
+                    const base64Data = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result?.toString().split(',')[1] || '');
+                        reader.readAsDataURL(file);
+                    });
+
+                    if (base64Data) {
+                        const text = await extractTextFromImage(apiKey, base64Data, file.type, fixKurdishLetters);
+                        consolidatedText += (images.length > 1 ? `\n--- [وێنەی ${i + 1}] ---\n` : '') + text + '\n';
+                        setExtractedText(consolidatedText);
+                    }
                 }
             }
-        };
+            incrementStat('ocrCount');
+            saveToHistory({ id: Date.now().toString(), type: 'OCR', content: consolidatedText, timestamp: new Date() });
+        } catch (err: any) {
+            setError("کێشەیەک ڕوویدا لە کاتی پرۆسێسکردندا.");
+            console.error(err);
+        } finally {
+            setIsProcessing(false);
+            setProcessingIndex(-1);
+            setPdfTotalPages(0);
+            setPdfCurrentPage(0);
+        }
     };
 
     const clearImage = () => {
-        setImage(null);
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
+        stopReading();
+        images.forEach(f => {
+            if (f.type !== 'application/pdf') {
+                const idx = images.indexOf(f);
+                const preview = previews[idx];
+                if (preview && preview !== 'pdf_placeholder') URL.revokeObjectURL(preview);
+            }
+        });
+        setImages([]);
+        setPreviews([]);
         setExtractedText('');
+    };
+
+    // Read Aloud Functions
+    const readAloud = async () => {
+        if (!extractedText || !apiKey || isGeneratingAudio) return;
+
+        setIsGeneratingAudio(true);
+        setError(null);
+
+        try {
+            if (!audioContextRef.current) {
+                audioContextRef.current = getAudioContext();
+            }
+
+            const audioBuffer = await generateSpeech(
+                apiKey,
+                'gemini-2.5-flash-preview-tts',
+                extractedText.slice(0, 1000), // Limit text length
+                'Kore', // Default voice
+                'Read naturally and clearly',
+                'at a moderate pace'
+            );
+
+            if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+            }
+
+            const source = audioContextRef.current.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContextRef.current.destination);
+            source.onended = () => setIsReading(false);
+            sourceNodeRef.current = source;
+            source.start();
+            setIsReading(true);
+        } catch (e: any) {
+            setError("خواندنەوە سەرکەوتوو نەبوو.");
+            console.error(e);
+        } finally {
+            setIsGeneratingAudio(false);
+        }
+    };
+
+    const stopReading = () => {
+        if (sourceNodeRef.current) {
+            try { sourceNodeRef.current.stop(); } catch (e) { }
+            setIsReading(false);
+        }
     };
 
     // Toggle Component
@@ -95,20 +193,43 @@ const OCRPage: React.FC = () => {
                 <ToggleSwitch small />
             </div>
 
-            {!image ? (
+            {images.length === 0 ? (
                 <div className="relative flex flex-col items-center justify-center h-48 bg-slate-800/50 border-2 border-dashed border-slate-700 rounded-xl">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 opacity-0" />
-                    <ImageIcon size={32} className="text-slate-500 mb-2" />
-                    <p className="text-sm text-slate-400">وێنەیەک هەڵبژێرە</p>
+                    <input type="file" accept="image/*,.pdf" multiple onChange={handleImageUpload} className="absolute inset-0 opacity-0" />
+                    <Upload size={32} className="text-slate-500 mb-2" />
+                    <p className="text-sm text-slate-400">وێنە یان PDF هەڵبژێرە</p>
                 </div>
             ) : (
-                <div className="flex flex-col items-center gap-4">
-                    <img src={previewUrl!} alt="Preview" className="w-full max-h-48 object-contain rounded-xl border border-white/10" />
+                <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-2">
+                        {previews.map((url, idx) => (
+                            <div key={idx} className={`relative rounded-lg overflow-hidden border ${processingIndex === idx ? 'border-pink-500 shadow-lg shadow-pink-500/20' : 'border-white/10'}`}>
+                                {url === 'pdf_placeholder' ? (
+                                    <div className="h-24 bg-slate-900 flex flex-col items-center justify-center">
+                                        <FileText size={16} className="text-rose-400 mb-1" />
+                                        <span className="text-[10px] text-slate-500">PDF Document</span>
+                                    </div>
+                                ) : (
+                                    <img src={url} alt="Preview" className="w-full h-24 object-cover" />
+                                )}
+                                {processingIndex === idx && (
+                                    <div className="absolute inset-0 bg-pink-600/20 flex items-center justify-center backdrop-blur-[1px]">
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                        <label className="relative flex flex-col items-center justify-center h-24 bg-slate-800/30 border border-dashed border-slate-700 rounded-lg cursor-pointer hover:border-pink-500/30 transition-colors">
+                            <input type="file" accept="image/*,.pdf" multiple onChange={handleImageUpload} className="absolute inset-0 opacity-0" />
+                            <Upload size={16} className="text-slate-500" />
+                        </label>
+                    </div>
+
                     <div className="flex gap-2">
-                        <button onClick={handleScan} disabled={isProcessing} className="px-4 py-2 bg-pink-600 text-white rounded-lg font-bold disabled:opacity-50 flex items-center gap-2">
-                            <ScanLine size={16} /> {isProcessing ? "..." : "سکێن"}
+                        <button onClick={handleScan} disabled={isProcessing} className="flex-1 py-2.5 bg-pink-600 text-white rounded-lg font-bold disabled:opacity-50 flex items-center justify-center gap-2">
+                            <ScanLine size={18} /> {isProcessing ? "خەریکی سکێن..." : "دەسپێکردن"}
                         </button>
-                        <button onClick={clearImage} className="p-2 bg-slate-800 text-rose-400 rounded-lg"><Trash2 size={18} /></button>
+                        <button onClick={clearImage} className="px-4 py-2.5 bg-slate-800 text-rose-400 rounded-lg"><Trash2 size={18} /></button>
                     </div>
                 </div>
             )}
@@ -117,7 +238,11 @@ const OCRPage: React.FC = () => {
 
             {extractedText && (
                 <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 mt-2">
-                    <p className="text-sm text-slate-200 font-kurdish">{extractedText}</p>
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs text-emerald-400 font-bold">ئەنجام</span>
+                        <button onClick={() => navigator.clipboard.writeText(extractedText)} className="text-slate-400"><Copy size={16} /></button>
+                    </div>
+                    <p className="text-sm text-slate-200 font-kurdish whitespace-pre-wrap">{extractedText}</p>
                 </div>
             )}
         </div>
@@ -132,35 +257,59 @@ const OCRPage: React.FC = () => {
             {/* Left Panel: Image Input */}
             <div className="bg-slate-800/30 border border-white/5 rounded-2xl p-6 flex flex-col">
                 <div className="mb-4 shrink-0 flex items-center justify-between">
-                    <h2 className="text-base font-bold text-white flex items-center gap-2"><ImageIcon size={18} className="text-pink-400" /> وێنەی سەرچاوە</h2>
+                    <h2 className="text-base font-bold text-white flex items-center gap-2"><ImageIcon size={18} className="text-pink-400" /> وێنەی سەرچاوە ({images.length})</h2>
                     <ToggleSwitch />
                 </div>
 
-                {!image ? (
+                {images.length === 0 ? (
                     <div className="flex-1 relative flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-xl hover:border-pink-500/50 transition-colors group cursor-pointer">
-                        <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        <input type="file" accept="image/*,.pdf" multiple onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                            <ImageIcon size={32} className="text-slate-500 group-hover:text-pink-400 transition-colors" />
+                            <Upload size={32} className="text-slate-500 group-hover:text-pink-400 transition-colors" />
                         </div>
-                        <h3 className="text-base font-bold text-slate-300">وێنەیەک لێرە دابنێ</h3>
-                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, WEBP</p>
+                        <h3 className="text-base font-bold text-slate-300">وێنەکان هەڵبژێرە</h3>
+                        <p className="text-xs text-slate-500 mt-1">PNG, JPG, PDF (Batch Support)</p>
                     </div>
                 ) : (
-                    <div className="flex-1 flex flex-col">
-                        <div className="flex-1 relative rounded-xl overflow-hidden border border-white/10 bg-slate-900/50 group">
-                            <img src={previewUrl!} alt="Preview" className="w-full h-full object-contain" />
-                            {isProcessing && (
-                                <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center">
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-pink-500/50 animate-scan"></div>
-                                    <p className="text-white font-bold animate-pulse">سکێنکردن...</p>
+                    <div className="flex-1 flex flex-col min-h-0">
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar grid grid-cols-2 gap-3 mb-4">
+                            {previews.map((url, idx) => (
+                                <div key={idx} className={`relative aspect-video rounded-xl overflow-hidden border bg-slate-900/50 group ${processingIndex === idx ? 'border-pink-500 ring-2 ring-pink-500/20' : 'border-white/5'}`}>
+                                    {url === 'pdf_placeholder' ? (
+                                        <div className="w-full h-full flex flex-col items-center justify-center">
+                                            <FileText size={32} className="text-rose-400 mb-2" />
+                                            <span className="text-xs text-slate-400 font-bold">PDF FILE</span>
+                                        </div>
+                                    ) : (
+                                        <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-contain" />
+                                    )}
+
+                                    {processingIndex === idx && (
+                                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center">
+                                            <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                            <span className="text-[10px] text-white font-bold tracking-widest">سکێنکردن</span>
+                                        </div>
+                                    )}
+
+                                    {idx > processingIndex && processingIndex !== -1 && (
+                                        <div className="absolute top-2 right-2 bg-slate-900/80 px-2 py-0.5 rounded text-[10px] text-slate-400 border border-white/5">
+                                            لە ڕیزدایە
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            ))}
+                            <label className="relative aspect-video flex flex-col items-center justify-center bg-slate-800/20 border border-dashed border-slate-700 rounded-xl cursor-pointer hover:bg-slate-800/40 hover:border-pink-500/30 transition-all flex-shrink-0">
+                                <input type="file" accept="image/*,.pdf" multiple onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                <Upload size={24} className="text-slate-600 mb-2" />
+                                <span className="text-[10px] text-slate-500">زیادکردن</span>
+                            </label>
                         </div>
-                        <div className="flex gap-3 mt-4">
-                            <button onClick={handleScan} disabled={isProcessing} className="flex-1 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all">
-                                <ScanLine size={18} /> {isProcessing ? "سکێنکردن..." : "دەرهێنانی نووسین"}
+
+                        <div className="flex gap-3 mt-auto shrink-0">
+                            <button onClick={handleScan} disabled={isProcessing} className="flex-1 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold rounded-xl shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all">
+                                <ScanLine size={18} /> {isProcessing ? (pdfTotalPages > 0 ? `پەڕەی ${pdfCurrentPage} لە ${pdfTotalPages}` : `وێنەی ${processingIndex + 1} لە ${images.length}`) : "دەرهێنانی هەموو دەقەکان"}
                             </button>
-                            <button onClick={clearImage} className="p-2.5 bg-slate-700 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-white/5"><Trash2 size={18} /></button>
+                            <button onClick={clearImage} className="p-3 bg-slate-700 text-rose-400 hover:bg-rose-500/10 rounded-xl border border-white/5 transition-colors"><Trash2 size={20} /></button>
                         </div>
                     </div>
                 )}
@@ -171,7 +320,29 @@ const OCRPage: React.FC = () => {
             <div className="bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col">
                 <div className="px-5 py-3 border-b border-white/5 flex justify-between items-center shrink-0">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle size={14} className="text-emerald-400" /> دەقی دەرهێنراو</span>
-                    {extractedText && <button onClick={() => navigator.clipboard.writeText(extractedText)} className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1"><Copy size={12} /> Copy</button>}
+                    <div className="flex items-center gap-2">
+                        {extractedText && (
+                            <>
+                                {!isReading ? (
+                                    <button
+                                        onClick={readAloud}
+                                        disabled={isGeneratingAudio}
+                                        className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 disabled:opacity-50"
+                                    >
+                                        <Volume2 size={12} /> {isGeneratingAudio ? '...' : 'بخوێنەوە'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={stopReading}
+                                        className="text-[10px] text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                    >
+                                        <Square size={10} /> وەستان
+                                    </button>
+                                )}
+                                <button onClick={() => navigator.clipboard.writeText(extractedText)} className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1"><Copy size={12} /> Copy</button>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">
                     {extractedText ? (

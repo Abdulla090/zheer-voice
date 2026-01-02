@@ -8,6 +8,7 @@ import { generateSpeech, improveText } from '../../services/geminiService';
 import { getAudioContext, audioBufferToWav } from '../../services/audioUtils';
 import { normalizeKurdishText } from '../../services/textUtils';
 import { loadHistory, saveToHistory, clearHistory } from '../../services/storageService';
+import { incrementStat } from '../../services/usageService';
 import { useOutletContext } from 'react-router-dom';
 
 const TTSPage: React.FC = () => {
@@ -194,6 +195,7 @@ const TTSPage: React.FC = () => {
                     };
                     setHistory(prev => [newHistoryItem, ...prev].slice(0, 20));
                     saveToHistory(newHistoryItem);
+                    incrementStat('ttsCount');
                     await new Promise(r => setTimeout(r, 500));
                     setBgProcessing(prev => prev - 1);
                 }
@@ -214,6 +216,7 @@ const TTSPage: React.FC = () => {
             const buffer = await generateSpeech(apiKey, selectedModel.id, processedText, selectedVoice.id, selectedTone.promptModifier, selectedSpeed.value);
             setAudioBuffer(buffer);
             setCurrentText(text); // Store the text for highlighting
+            incrementStat('ttsCount');
             setStatus(TTSStatus.IDLE);
             playAudio(buffer, text);
             updateUsageStats(processedText.length);
@@ -320,10 +323,10 @@ const TTSPage: React.FC = () => {
                         <span
                             key={index}
                             className={`transition-all duration-150 inline-block ${index === currentWordIndex
-                                    ? 'bg-soran-500/50 text-white px-1 py-0.5 rounded scale-105'
-                                    : index < currentWordIndex
-                                        ? 'text-slate-500'
-                                        : 'text-slate-300'
+                                ? 'bg-soran-500/50 text-white px-1 py-0.5 rounded scale-105'
+                                : index < currentWordIndex
+                                    ? 'text-slate-500'
+                                    : 'text-slate-300'
                                 }`}
                         >
                             {word}{' '}

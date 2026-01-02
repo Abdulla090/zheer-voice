@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, Upload, FileAudio, Trash2, Copy, CheckCircle, Play, Pause, Square } from 'lucide-react';
 import { transcribeAudio } from '../../services/geminiService';
 import { saveToHistory } from '../../services/storageService';
+import { incrementStat } from '../../services/usageService';
 
 const STTPage: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -187,6 +188,7 @@ const STTPage: React.FC = () => {
                 try {
                     const text = await transcribeAudio(apiKey, base64Data, audioBlob.type || 'audio/wav');
                     setTranscription(text);
+                    incrementStat('sttCount');
                     saveToHistory({ id: Date.now().toString(), type: 'STT', content: text, timestamp: new Date() });
                 } catch {
                     setError("کێشەیەک ڕوویدا.");
@@ -212,10 +214,10 @@ const STTPage: React.FC = () => {
                 <span
                     key={index}
                     className={`transition-all duration-150 ${index === currentWordIndex
-                            ? 'bg-emerald-500/40 text-white px-1 py-0.5 rounded'
-                            : index < currentWordIndex
-                                ? 'text-slate-400'
-                                : ''
+                        ? 'bg-emerald-500/40 text-white px-1 py-0.5 rounded'
+                        : index < currentWordIndex
+                            ? 'text-slate-400'
+                            : ''
                         }`}
                 >
                     {word}{' '}
