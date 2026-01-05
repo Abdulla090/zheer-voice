@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Mic, Image as ImageIcon, Wand2, History, X, AudioWaveform, Home, Languages } from 'lucide-react';
+import { Mic, Image as ImageIcon, Wand2, History, X, AudioWaveform, Home, Languages, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) => {
@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
         { icon: <Wand2 size={20} />, label: 'باشساز (Grammar)', path: '/grammar' },
         { icon: <Languages size={20} />, label: 'وەرگێڕ (Translate)', path: '/translate' },
         { icon: <History size={20} />, label: 'مێژوو', path: '/history' },
+        { icon: <Settings size={20} />, label: 'ڕێکخستنەکان', path: '/settings' },
     ];
 
     return (

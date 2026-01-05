@@ -65,6 +65,13 @@ const TranslatePage: React.FC = () => {
         }
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            handleTranslate();
+        }
+    };
+
     const swapLanguages = () => {
         setDirection(prev => prev === 'to_kurdish' ? 'from_kurdish' : 'to_kurdish');
         setInputText(outputText);
@@ -165,6 +172,7 @@ const TranslatePage: React.FC = () => {
             <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={direction === 'to_kurdish' ? "دەقی ئینگلیزی/عەرەبی..." : "دەقی کوردی..."}
                 className="w-full h-32 bg-slate-800/50 border border-white/10 rounded-xl p-4 text-sm resize-none focus:outline-none focus:border-blue-500/50 placeholder-slate-600 font-kurdish"
             />
@@ -250,6 +258,7 @@ const TranslatePage: React.FC = () => {
                     <textarea
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="دەقەکەت لێرە بنووسە..."
                         className="flex-1 w-full bg-transparent p-4 text-sm leading-relaxed resize-none focus:outline-none placeholder-slate-600 font-kurdish"
                     />

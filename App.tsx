@@ -9,23 +9,32 @@ import OCRPage from './src/pages/OCRPage';
 import GrammarPage from './src/pages/GrammarPage';
 import HistoryPage from './src/pages/HistoryPage';
 import TranslatePage from './src/pages/TranslatePage';
+import SettingsPage from './src/pages/SettingsPage';
 import ApiKeyModal from './components/ApiKeyModal';
 import { ToastProvider } from './src/components/Toast/ToastProvider';
 
 const App: React.FC = () => {
-  const [showKeyModal, setShowKeyModal] = useState(false);
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
 
-  const handleSaveKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem('gemini_api_key', key);
-    setShowKeyModal(false);
-  };
+  // Handle key changes (can be called from settings page via some trigger if needed, 
+  // but for now we rely on a full page reload or layout state)
+  // Actually, let's keep it simple: the header shows the status from localStorage.
+
+  // Update apiKey manually if needed, or just let Layout read it.
+  React.useEffect(() => {
+    const handleStorage = () => setApiKey(localStorage.getItem('gemini_api_key') || '');
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('localStorageChange', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('localStorageChange', handleStorage);
+    };
+  }, []);
 
   return (
     <ToastProvider>
       <Router>
-        <Layout onOpenSettings={() => setShowKeyModal(true)} hasKey={!!apiKey}>
+        <Layout hasKey={!!apiKey}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/tts" element={<TTSPage />} />
@@ -34,17 +43,8 @@ const App: React.FC = () => {
             <Route path="/grammar" element={<GrammarPage />} />
             <Route path="/translate" element={<TranslatePage />} />
             <Route path="/history" element={<HistoryPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
-
-          <ApiKeyModal
-            isOpen={showKeyModal}
-            onClose={() => setShowKeyModal(false)}
-            onSave={handleSaveKey}
-            currentKey={apiKey}
-            usageCount={parseInt(localStorage.getItem('usage_count') || '0')}
-            requestCountToday={parseInt(localStorage.getItem('usage_daily_requests') || '0')}
-            requestCountMinute={0}
-          />
         </Layout>
       </Router>
     </ToastProvider>

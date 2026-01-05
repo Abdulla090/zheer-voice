@@ -6,6 +6,7 @@ import { saveToHistory } from '../../services/storageService';
 import { getAudioContext } from '../../services/audioUtils';
 import { pdfToImages } from '../../services/pdfUtils';
 import { incrementStat } from '../../services/usageService';
+import { useToast } from '../components/Toast/ToastProvider';
 
 const OCRPage: React.FC = () => {
     const [images, setImages] = useState<File[]>([]);
@@ -15,8 +16,8 @@ const OCRPage: React.FC = () => {
     const [processingIndex, setProcessingIndex] = useState(-1);
     const [pdfTotalPages, setPdfTotalPages] = useState(0);
     const [pdfCurrentPage, setPdfCurrentPage] = useState(0);
-    const [error, setError] = useState<string | null>(null);
     const [fixKurdishLetters, setFixKurdishLetters] = useState(false); // OFF by default for fast mode
+    const { showToast } = useToast();
 
     // Read Aloud state
     const [isReading, setIsReading] = useState(false);
@@ -27,7 +28,6 @@ const OCRPage: React.FC = () => {
     const apiKey = localStorage.getItem('gemini_api_key');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setError(null);
         if (e.target.files && e.target.files.length > 0) {
             const files = Array.from(e.target.files);
             const imageFiles = files.filter((f: File) => f.type.startsWith('image/') || f.type === 'application/pdf');
@@ -38,19 +38,20 @@ const OCRPage: React.FC = () => {
                 setPreviews(newPreviews);
                 setExtractedText('');
             } else {
-                setError("تەنها وێنە و پۆڵێنی PDF.");
+                showToast("تەنها وێنە و پۆڵێنی PDF پشتگیری دەکرێت.", "error");
             }
         }
     };
 
+
+
     const handleScan = async () => {
         if (images.length === 0 || !apiKey) {
-            if (!apiKey) setError("کلیلی API داخل بکە.");
+            if (!apiKey) showToast("تکایە سەرەتا کلیلی API زیاد بکە.", "error");
             return;
         }
 
         setIsProcessing(true);
-        setError(null);
         let consolidatedText = '';
 
         try {
@@ -88,8 +89,9 @@ const OCRPage: React.FC = () => {
             }
             incrementStat('ocrCount');
             saveToHistory({ id: Date.now().toString(), type: 'OCR', content: consolidatedText, timestamp: new Date() });
+            showToast("دەقەکان بە سەرکەوتوویی دەرهێنران ✨", "success");
         } catch (err: any) {
-            setError("کێشەیەک ڕوویدا لە کاتی پرۆسێسکردندا.");
+            showToast("کێشەیەک لە کاتی سکێنکردن ڕوویدا.", "error");
             console.error(err);
         } finally {
             setIsProcessing(false);
@@ -118,7 +120,7 @@ const OCRPage: React.FC = () => {
         if (!extractedText || !apiKey || isGeneratingAudio) return;
 
         setIsGeneratingAudio(true);
-        setError(null);
+
 
         try {
             if (!audioContextRef.current) {
@@ -146,7 +148,7 @@ const OCRPage: React.FC = () => {
             source.start();
             setIsReading(true);
         } catch (e: any) {
-            setError("خواندنەوە سەرکەوتوو نەبوو.");
+            showToast("خوێندنەوە سەرکەوتوو نەبوو.", "error");
             console.error(e);
         } finally {
             setIsGeneratingAudio(false);
@@ -234,7 +236,7 @@ const OCRPage: React.FC = () => {
                 </div>
             )}
 
-            {error && <p className="text-rose-400 text-xs text-center">{error}</p>}
+
 
             {extractedText && (
                 <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 mt-2">
@@ -313,7 +315,7 @@ const OCRPage: React.FC = () => {
                         </div>
                     </div>
                 )}
-                {error && <p className="mt-4 text-rose-400 text-sm text-center">{error}</p>}
+
             </div>
 
             {/* Right Panel: Output */}

@@ -1,9 +1,11 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { TranscriptionActions } from '../components/STT/TranscriptionActions';
 import { Mic, Upload, FileAudio, Trash2, Copy, CheckCircle, Play, Pause, Square } from 'lucide-react';
 import { transcribeAudio } from '../../services/geminiService';
 import { saveToHistory } from '../../services/storageService';
 import { incrementStat } from '../../services/usageService';
+
 
 const STTPage: React.FC = () => {
     const [isRecording, setIsRecording] = useState(false);
@@ -303,6 +305,12 @@ const STTPage: React.FC = () => {
                 <div className="bg-slate-900/50 border border-white/5 rounded-xl p-4 mt-4">
                     <HighlightedText isMobile />
                     {audioUrl && <PlaybackControls small />}
+                    <TranscriptionActions
+                        transcription={transcription}
+                        audioDuration={audioDuration}
+                        className="mt-3 pt-3 border-t border-white/5 w-full justify-between"
+                        buttonClassName="text-[10px] text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded border border-white/5 flex-1 flex justify-center"
+                    />
                 </div>
             )}
         </div>
@@ -370,7 +378,13 @@ const STTPage: React.FC = () => {
                                 )}
                             </>
                         )}
-                        {transcription && <button onClick={() => navigator.clipboard.writeText(transcription)} className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1"><Copy size={12} /> Copy</button>}
+                        {transcription && (
+                            <TranscriptionActions
+                                transcription={transcription}
+                                audioDuration={audioDuration}
+                                buttonClassName="text-[10px] text-slate-400 hover:text-white bg-white/5 px-2 py-1 rounded hover:bg-white/10 transition-colors"
+                            />
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">

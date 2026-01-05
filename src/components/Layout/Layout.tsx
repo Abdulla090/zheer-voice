@@ -1,16 +1,15 @@
 
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import { Menu } from 'lucide-react';
-import Header from '../../../components/Header'; // We might move Header logic here or keep it. Actually sidebar replaces header somewhat but we still need the API key modal trigger.
+import { Menu, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface LayoutProps {
     children: React.ReactNode;
-    onOpenSettings: () => void;
     hasKey: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onOpenSettings, hasKey }) => {
+const Layout: React.FC<LayoutProps> = ({ children, hasKey }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -41,8 +40,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenSettings, hasKey }) => 
 
                     {/* API Key Status / Settings */}
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={onOpenSettings}
+                        <Link
+                            to="/settings"
                             className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${hasKey
                                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                                 : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20 animate-pulse'
@@ -50,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenSettings, hasKey }) => 
                         >
                             <div className={`w-2 h-2 rounded-full ${hasKey ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
                             {hasKey ? 'کلیلی API کارایە' : 'کلیل دابنێ (API Key)'}
-                        </button>
+                        </Link>
                         {/* User Avatar Placeholder */}
                         <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 border border-white/10"></div>
                     </div>

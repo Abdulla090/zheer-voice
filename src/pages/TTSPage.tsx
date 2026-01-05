@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Waveform from '../../components/Waveform';
-import ApiKeyModal from '../../components/ApiKeyModal';
 import { AVAILABLE_VOICES, AVAILABLE_TONES, AVAILABLE_SPEEDS, SAMPLE_TEXTS, AVAILABLE_MODELS } from '../../constants';
 import { VoiceConfig, ToneConfig, SpeedConfig, TTSStatus, GeneratedAudio, ModelConfig } from '../../types';
 import { generateSpeech, improveText } from '../../services/geminiService';
@@ -10,6 +9,7 @@ import { normalizeKurdishText } from '../../services/textUtils';
 import { loadHistory, saveToHistory, clearHistory } from '../../services/storageService';
 import { incrementStat } from '../../services/usageService';
 import { useOutletContext } from 'react-router-dom';
+import { useToast } from '../components/Toast/ToastProvider';
 
 const TTSPage: React.FC = () => {
     // Access shared state from Layout if needed, but for now we keep local state 
@@ -38,7 +38,6 @@ const TTSPage: React.FC = () => {
     // But wait, Layout has the header. How does Layout trigger this modal?
     // Ideally, context. For simplicity, we'll assume the key is in localStorage.
 
-    const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
     const [usageCount, setUsageCount] = useState<number>(0);
     const [requestCountToday, setRequestCountToday] = useState<number>(0);
     const [requestCountMinute, setRequestCountMinute] = useState<number>(0);
@@ -56,6 +55,7 @@ const TTSPage: React.FC = () => {
     // Player Settings
     const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
     const [volume, setVolume] = useState<number>(1.0);
+    const { showToast } = useToast();
 
     // Get words from current text
     const words = currentText ? currentText.split(/\s+/).filter(w => w.length > 0) : [];
@@ -160,7 +160,7 @@ const TTSPage: React.FC = () => {
 
         if (!apiKey) {
             // Trigger global modal or local alert
-            alert("Please set your API Key in settings first.");
+            showToast("تکایە سەرەتا کلیلی API لە ڕێکخستنەکان دابنێ.", "error");
             return;
         }
 
@@ -233,6 +233,7 @@ const TTSPage: React.FC = () => {
         } catch (err: any) {
             console.error(err);
             setErrorMsg(err.message || "کێشەیەک ڕوویدا.");
+            showToast("کێشەیەک لە دروستکردنی دەنگ ڕوویدا.", "error");
             setStatus(TTSStatus.ERROR);
         }
     };
@@ -307,8 +308,16 @@ const TTSPage: React.FC = () => {
         } catch (e: any) {
             console.error(e);
             setErrorMsg("کێشەیەک لە پرۆسێسکردنی دەق ڕوویدا.");
+            showToast("کێشەیەک لە پرۆسێسکردنی دەق ڕوویدا.", "error");
             setStatus(TTSStatus.ERROR);
             setText(originalText);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            handleGenerate();
         }
     };
 
@@ -378,6 +387,7 @@ const TTSPage: React.FC = () => {
                     <textarea
                         value={text}
                         onChange={(e) => setText(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="لێرە بنووسە... (تکایە دەقی کوردی بنووسە - یان English بۆ وەرگێڕان)"
                         className="w-full h-48 bg-transparent p-4 text-right font-kurdish text-lg md:text-xl text-white placeholder-slate-600 focus:outline-none resize-none leading-loose"
                     />

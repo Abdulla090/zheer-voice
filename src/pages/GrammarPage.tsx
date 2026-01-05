@@ -4,16 +4,22 @@ import { Wand2, Check, Copy, Sparkles } from 'lucide-react';
 import { improveText } from '../../services/geminiService';
 import FormattedText from '../components/FormattedText';
 import { incrementStat } from '../../services/usageService';
+import { useToast } from '../components/Toast/ToastProvider';
 
 const GrammarPage: React.FC = () => {
     const [inputText, setInputText] = useState('');
     const [fixedText, setFixedText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const apiKey = localStorage.getItem('gemini_api_key');
+    const { showToast } = useToast();
 
     const handleFix = async () => {
-        if (!inputText.trim() || !apiKey) {
-            if (!apiKey) alert("تکایە سەرەتا کلیلی API زیاد بکە.");
+        if (!inputText.trim()) {
+            showToast("تکایە دەق بنوسە.", "error");
+            return;
+        }
+        if (!apiKey) {
+            showToast("تکایە سەرەتا کلیلی API زیاد بکە.", "error");
             return;
         }
 
@@ -22,11 +28,22 @@ const GrammarPage: React.FC = () => {
             const result = await improveText(apiKey, 'gemini-2.5-flash', inputText, 'fix_grammar');
             setFixedText(result);
             incrementStat('grammarCount');
+            showToast("دەقەکە بە سەرکەوتوویی باشکرا ✨", "success");
         } catch (e) {
             console.error(e);
-            alert("کێشەیەک ڕوویدا.");
+            showToast("کێشەیەک ڕوویدا لە کاتی چاککردن.", "error");
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    // Keyboard Shortcut: Ctrl + Enter
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            if (!isProcessing && inputText) {
+                handleFix();
+            }
         }
     };
 
@@ -43,6 +60,7 @@ const GrammarPage: React.FC = () => {
             <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="دەقەکەت لێرە بنووسە..."
                 className="w-full h-40 bg-slate-800/50 border border-white/10 rounded-xl p-4 text-sm resize-none focus:outline-none focus:border-purple-500/50 placeholder-slate-600 font-kurdish"
             />
@@ -107,6 +125,7 @@ const GrammarPage: React.FC = () => {
                     <textarea
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="دەقەکەت لێرە بنووسە..."
                         className="flex-1 w-full bg-transparent p-4 text-sm leading-relaxed resize-none focus:outline-none placeholder-slate-600 font-kurdish"
                     />
