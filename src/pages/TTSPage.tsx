@@ -315,12 +315,11 @@ const TTSPage: React.FC = () => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.ctrlKey && e.key === 'Enter') {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
             handleGenerate();
         }
     };
-
     // Highlighted Text Display Component
     const HighlightedTextDisplay = () => {
         if (!currentText || words.length === 0) return null;

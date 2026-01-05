@@ -47,22 +47,24 @@ const SettingsPage: React.FC = () => {
     const handleSaveKey = () => {
         try {
             localStorage.setItem('gemini_api_key', apiKey);
+            window.dispatchEvent(new Event('localStorageChange'));
             showToast("کلیلی API بە سەرکەوتوویی پاشەکەوت کرا", "success");
         } catch (error: any) {
             console.error("Failed to save API key:", error);
             showToast(`هەڵە لە پاشەکەوتکردنی کلیل: ${error.message || error}`, "error");
         }
     };
-
     const handleModelChange = (modelId: string) => {
         try {
             setSelectedModel(modelId);
             localStorage.setItem('default_model', modelId);
-            showToast(`مۆدێلی بنەڕەتی گۆڕدرا بۆ ${AVAILABLE_MODELS.find(m => m.id === modelId)?.name}`, "success");
+            const modelName = AVAILABLE_MODELS.find(m => m.id === modelId)?.name || modelId;
+            showToast(`مۆدێلی بنەڕەتی گۆڕدرا بۆ ${modelName}`, "success");
         } catch (error) {
             showToast(`هەڵە لە گۆڕینی مۆدێل: ${error}`, "error");
         }
     };
+
 
     const handleResetStats = () => {
         if (window.confirm("ئایا دڵنیایت لە سفرکردنەوەی ئامارەکان؟")) {

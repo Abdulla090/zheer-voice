@@ -66,12 +66,13 @@ const TranslatePage: React.FC = () => {
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.ctrlKey && e.key === 'Enter') {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
-            handleTranslate();
+            if (!isProcessing) {
+                handleTranslate();
+            }
         }
     };
-
     const swapLanguages = () => {
         setDirection(prev => prev === 'to_kurdish' ? 'from_kurdish' : 'to_kurdish');
         setInputText(outputText);

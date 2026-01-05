@@ -47,10 +47,13 @@ const OCRPage: React.FC = () => {
 
     const handleScan = async () => {
         if (images.length === 0 || !apiKey) {
-            if (!apiKey) showToast("تکایە سەرەتا کلیلی API زیاد بکە.", "error");
+            if (!apiKey) {
+                showToast("تکایە سەرەتا کلیلی API زیاد بکە.", "error");
+            } else if (images.length === 0) {
+                showToast("تکایە سەرەتا وێنەیەک هەڵبژێرە.", "error");
+            }
             return;
         }
-
         setIsProcessing(true);
         let consolidatedText = '';
 

@@ -19,12 +19,24 @@ export const TranscriptionActions: React.FC<TranscriptionActionsProps> = ({
     const { showToast } = useToast();
     const [copySuccess, setCopySuccess] = useState(false);
 
+    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    React.useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
+    }, []);
+
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(transcription);
             setCopySuccess(true);
             showToast("دەق کۆپی کرا", "success");
-            setTimeout(() => setCopySuccess(false), 2000);
+
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => setCopySuccess(false), 2000);
         } catch (err) {
             console.error('Failed to copy text: ', err);
             showToast("کێشەیەک لە کۆپیکردن ڕوویدا", "error");

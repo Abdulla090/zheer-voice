@@ -10,7 +10,7 @@ import GrammarPage from './src/pages/GrammarPage';
 import HistoryPage from './src/pages/HistoryPage';
 import TranslatePage from './src/pages/TranslatePage';
 import SettingsPage from './src/pages/SettingsPage';
-import ApiKeyModal from './components/ApiKeyModal';
+
 import { ToastProvider } from './src/components/Toast/ToastProvider';
 
 const App: React.FC = () => {

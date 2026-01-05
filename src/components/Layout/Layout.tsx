@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import { Menu, Settings } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface LayoutProps {
