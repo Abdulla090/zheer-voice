@@ -10,6 +10,7 @@ const GrammarPage: React.FC = () => {
     const [inputText, setInputText] = useState('');
     const [fixedText, setFixedText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [language, setLanguage] = useState<'ku' | 'en'>('ku');
     const apiKey = localStorage.getItem('gemini_api_key');
     const { showToast } = useToast();
 
@@ -25,7 +26,7 @@ const GrammarPage: React.FC = () => {
 
         setIsProcessing(true);
         try {
-            const result = await improveText(apiKey, 'gemini-2.5-flash', inputText, 'fix_grammar');
+            const result = await improveText(apiKey, 'gemini-2.5-flash', inputText, 'fix_grammar', language);
             setFixedText(result);
             incrementStat('grammarCount');
             showToast("دەقەکە بە سەرکەوتوویی باشکرا ✨", "success");
@@ -56,6 +57,11 @@ const GrammarPage: React.FC = () => {
                 <Wand2 size={20} className="text-purple-400" />
                 باشسازی ڕێنووس
             </h1>
+
+            <div className="flex bg-slate-800 p-1 rounded-lg self-start">
+                <button onClick={() => setLanguage('ku')} className={`px-3 py-1 text-xs rounded-md transition-all ${language === 'ku' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400'}`}>Kurdish</button>
+                <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-xs rounded-md transition-all ${language === 'en' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400'}`}>English</button>
+            </div>
 
             <textarea
                 value={inputText}
@@ -101,6 +107,11 @@ const GrammarPage: React.FC = () => {
                         <h1 className="text-base font-bold text-white">باشسازی ڕێنووس</h1>
                         <p className="text-[10px] text-slate-500">Grammar Fixer &bull; Powered by Gemini</p>
                     </div>
+                </div>
+
+                <div className="flex bg-slate-800 p-1 rounded-lg">
+                    <button onClick={() => setLanguage('ku')} className={`px-3 py-1 text-xs rounded-md transition-all ${language === 'ku' ? 'bg-purple-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}`}>Kurdish</button>
+                    <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-xs rounded-md transition-all ${language === 'en' ? 'bg-blue-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}`}>English</button>
                 </div>
 
                 <button

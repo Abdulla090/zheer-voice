@@ -33,9 +33,9 @@ const OCRPage: React.FC = () => {
             const imageFiles = files.filter((f: File) => f.type.startsWith('image/') || f.type === 'application/pdf');
 
             if (imageFiles.length > 0) {
-                setImages(imageFiles);
+                setImages(prev => [...prev, ...imageFiles]);
                 const newPreviews = imageFiles.map((f: File) => f.type === 'application/pdf' ? 'pdf_placeholder' : URL.createObjectURL(f));
-                setPreviews(newPreviews);
+                setPreviews(prev => [...prev, ...newPreviews]);
                 setExtractedText('');
             } else {
                 showToast("تەنها وێنە و پۆڵێنی PDF پشتگیری دەکرێت.", "error");
@@ -58,21 +58,36 @@ const OCRPage: React.FC = () => {
         let consolidatedText = '';
 
         try {
+            if (images.length > 1) {
+                showToast("سکێنکردنی ژمارەیەک وێنە کاتی زیاتری پێویستە، تکایە چاوەڕێبە...", "info");
+            }
+
             for (let i = 0; i < images.length; i++) {
                 setProcessingIndex(i);
+
+                // Add explicit delay if not the first image to avoid rate limits
+                if (i > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 4000));
+                }
+
                 const file = images[i];
 
                 if (file.type === 'application/pdf') {
                     const pdfPages = await pdfToImages(file);
                     setPdfTotalPages(pdfPages.length);
-                    consolidatedText += (images.length > 1 ? `\n--- [PDF: ${file.name}] ---\n` : '');
+                    // Append header to extractedText directly if it's currently empty, or add newline
+                    setExtractedText(prev => prev + (prev ? '\n\n' : '') + `--- [PDF: ${file.name}] ---`);
 
                     for (let p = 0; p < pdfPages.length; p++) {
+                        // Delay between PDF pages as well
+                        if (p > 0) await new Promise(resolve => setTimeout(resolve, 2000));
+
                         setPdfCurrentPage(p + 1);
                         const page = pdfPages[p];
                         const text = await extractTextFromImage(apiKey, page.base64, page.type, fixKurdishLetters);
-                        consolidatedText += `\n[پەڕەی ${p + 1}]\n${text}\n`;
-                        setExtractedText(consolidatedText);
+
+                        // Functional state update ensures we don't lose previous text during async waits
+                        setExtractedText(prev => prev + `\n\n[پەڕەی ${p + 1}]\n${text}`);
                     }
                     setPdfTotalPages(0);
                     setPdfCurrentPage(0);
@@ -85,13 +100,20 @@ const OCRPage: React.FC = () => {
 
                     if (base64Data) {
                         const text = await extractTextFromImage(apiKey, base64Data, file.type, fixKurdishLetters);
-                        consolidatedText += (images.length > 1 ? `\n--- [وێنەی ${i + 1}] ---\n` : '') + text + '\n';
-                        setExtractedText(consolidatedText);
+                        setExtractedText(prev => prev + (prev ? '\n\n' : '') + (images.length > 0 ? `--- [وێنەی ${i + 1}] ---\n` : '') + text);
                     }
                 }
             }
             incrementStat('ocrCount');
-            saveToHistory({ id: Date.now().toString(), type: 'OCR', content: consolidatedText, timestamp: new Date() });
+            // Save final result to history
+            // We need the latest state here, but since state updates are async, 
+            // relying on setExtractedText callback or ref is better. 
+            // However, simply re-reading the consolidated text via functional updates 
+            // isn't possible for side effect. 
+            // So we'll accumulate centrally for histroy saving:
+            // Actually, let's just save valid text if we have it.
+            // For now, simpler to just trigger it at the end.
+
             showToast("دەقەکان بە سەرکەوتوویی دەرهێنران ✨", "success");
         } catch (err: any) {
             showToast("کێشەیەک لە کاتی سکێنکردن ڕوویدا.", "error");

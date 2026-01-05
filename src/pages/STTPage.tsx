@@ -14,6 +14,7 @@ const STTPage: React.FC = () => {
     const [transcription, setTranscription] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [targetLanguage, setTargetLanguage] = useState<'ku' | 'en' | 'auto'>('ku');
 
     // Audio playback with highlighting
     const [isPlaying, setIsPlaying] = useState(false);
@@ -188,7 +189,7 @@ const STTPage: React.FC = () => {
             const base64Data = reader.result?.toString().split(',')[1];
             if (base64Data) {
                 try {
-                    const text = await transcribeAudio(apiKey, base64Data, audioBlob.type || 'audio/wav');
+                    const text = await transcribeAudio(apiKey, base64Data, audioBlob.type || 'audio/wav', targetLanguage);
                     setTranscription(text);
                     incrementStat('sttCount');
                     saveToHistory({ id: Date.now().toString(), type: 'STT', content: text, timestamp: new Date() });
@@ -263,6 +264,14 @@ const STTPage: React.FC = () => {
         </div>
     );
 
+    const LanguageSelector = () => (
+        <div className="flex gap-1 bg-slate-800 p-1 rounded-lg">
+            <button onClick={() => setTargetLanguage('ku')} className={`px-3 py-1 text-xs rounded-md transition-all ${targetLanguage === 'ku' ? 'bg-emerald-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}`}>Kurdish</button>
+            <button onClick={() => setTargetLanguage('en')} className={`px-3 py-1 text-xs rounded-md transition-all ${targetLanguage === 'en' ? 'bg-blue-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}`}>English</button>
+            <button onClick={() => setTargetLanguage('auto')} className={`px-3 py-1 text-xs rounded-md transition-all ${targetLanguage === 'auto' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white'}`}>Auto</button>
+        </div>
+    );
+
     // ============================================
     // MOBILE VIEW
     // ============================================
@@ -292,6 +301,9 @@ const STTPage: React.FC = () => {
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-16 h-16 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400"><FileAudio size={32} /></div>
                     <p className="text-sm text-slate-400">{(audioBlob.size / 1024 / 1024).toFixed(2)} MB</p>
+
+                    <LanguageSelector />
+
                     <div className="flex gap-2">
                         <button onClick={handleTranscribe} disabled={isProcessing} className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold disabled:opacity-50">{isProcessing ? "..." : "وەرگێڕان"}</button>
                         <button onClick={clearAudio} className="p-2 bg-slate-800 text-rose-400 rounded-lg"><Trash2 size={18} /></button>
@@ -352,6 +364,10 @@ const STTPage: React.FC = () => {
                         <div className="w-20 h-20 mx-auto bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 border border-emerald-500/20"><FileAudio size={40} /></div>
                         <h3 className="text-lg font-bold text-white mt-4">پەڕگەی دەنگی ئامادەیە</h3>
                         <p className="text-slate-400 text-sm">{(audioBlob.size / 1024 / 1024).toFixed(2)} MB</p>
+
+                        <div className="flex justify-center mt-4">
+                            <LanguageSelector />
+                        </div>
 
                         <div className="flex gap-3 mt-6 justify-center">
                             <button onClick={handleTranscribe} disabled={isProcessing} className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-lg shadow-lg disabled:opacity-50 flex items-center gap-2 transition-all">

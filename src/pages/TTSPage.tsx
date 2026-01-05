@@ -20,6 +20,8 @@ const TTSPage: React.FC = () => {
     const [selectedTone, setSelectedTone] = useState<ToneConfig>(AVAILABLE_TONES[0]);
     const [selectedSpeed, setSelectedSpeed] = useState<SpeedConfig>(AVAILABLE_SPEEDS[1]);
     const [selectedModel, setSelectedModel] = useState<ModelConfig>(AVAILABLE_MODELS[0]);
+    const [language, setLanguage] = useState<'ku' | 'en'>('ku');
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const [status, setStatus] = useState<TTSStatus>(TTSStatus.IDLE);
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -183,7 +185,7 @@ const TTSPage: React.FC = () => {
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
                     const processedText = normalizeKurdishText(line);
-                    const buffer = await generateSpeech(apiKey, selectedModel.id, processedText, selectedVoice.id, selectedTone.promptModifier, selectedSpeed.value);
+                    const buffer = await generateSpeech(apiKey, selectedModel.id, processedText, selectedVoice.id, selectedTone.promptModifier, selectedSpeed.value, language);
                     updateUsageStats(processedText.length);
                     const newHistoryItem: GeneratedAudio = {
                         id: Date.now().toString() + i,
@@ -213,7 +215,7 @@ const TTSPage: React.FC = () => {
         setStatus(TTSStatus.GENERATING);
         try {
             const processedText = normalizeKurdishText(text);
-            const buffer = await generateSpeech(apiKey, selectedModel.id, processedText, selectedVoice.id, selectedTone.promptModifier, selectedSpeed.value);
+            const buffer = await generateSpeech(apiKey, selectedModel.id, processedText, selectedVoice.id, selectedTone.promptModifier, selectedSpeed.value, language);
             setAudioBuffer(buffer);
             setCurrentText(text); // Store the text for highlighting
             incrementStat('ttsCount');
@@ -302,7 +304,7 @@ const TTSPage: React.FC = () => {
         setErrorMsg(null);
 
         try {
-            const result = await improveText(apiKey, selectedModel.id, text, task);
+            const result = await improveText(apiKey, selectedModel.id, text, task, language);
             setText(result);
             setStatus(TTSStatus.IDLE);
         } catch (e: any) {
@@ -352,13 +354,13 @@ const TTSPage: React.FC = () => {
                 {/* Text Input */}
                 <div className="bg-slate-800/50 rounded-2xl p-1 border border-white/10 shadow-xl backdrop-blur-sm">
                     <div className="p-4 border-b border-white/5 flex justify-between items-center">
-                        <label className="text-sm font-bold text-slate-300">دەقی کوردی (سۆرانی)</label>
-                        <div className="flex items-center gap-2">
+                        <label className="text-sm font-bold text-slate-300">{language === 'ku' ? 'دەقی کوردی (سۆرانی)' : 'English Text'}</label>
+                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pl-2">
                             {/* Smart Tools */}
                             <button
                                 onClick={() => handleImproveText('fix_grammar')}
                                 disabled={status === TTSStatus.GENERATING}
-                                className="flex items-center gap-1 text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded transition-colors border border-emerald-500/20"
+                                className="flex-shrink-0 flex items-center gap-1 text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded transition-colors border border-emerald-500/20 whitespace-nowrap"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" clipRule="evenodd" /></svg>
                                 چاککردن
@@ -367,20 +369,27 @@ const TTSPage: React.FC = () => {
                             <button
                                 onClick={() => handleImproveText('translate_to_kurdish')}
                                 disabled={status === TTSStatus.GENERATING}
-                                className="flex items-center gap-1 text-[10px] bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-2 py-1 rounded transition-colors border border-purple-500/20"
+                                className="flex-shrink-0 flex items-center gap-1 text-[10px] bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-2 py-1 rounded transition-colors border border-purple-500/20 whitespace-nowrap"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.89 18.89 0 01-2.46 6.374 18.897 18.897 0 016 3.126 1 1 0 101.414-1.414 20.9 20.9 0 00-5.698-3.053c.681-1.04 1.5-2.008 2.459-2.803a1 1 0 10-1.415-1.414 16.92 16.92 0 00-2.388 2.924H2a1 1 0 010-2h4V3a1 1 0 011-1z" clipRule="evenodd" /></svg>
                                 وەرگێڕان
                             </button>
 
-                            <div className="w-px h-4 bg-white/10 mx-1"></div>
-
-                            {/* Batch Toggle */}
-                            <button onClick={() => setIsBatchMode(!isBatchMode)} className={`text-xs px-3 py-1 rounded-full border transition-all ${isBatchMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50' : 'bg-slate-700/50 text-slate-400 border-transparent hover:bg-slate-700'}`}>
-                                {isBatchMode ? 'مۆدی کۆمەڵ (Batch)' : 'تاک (Single)'}
+                            {/* Language Toggle */}
+                            <button onClick={() => setLanguage(l => l === 'ku' ? 'en' : 'ku')} className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1 ${language === 'en' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-green-500/20 text-green-300 border-green-500/50'}`}>
+                                <span className={language === 'ku' ? 'font-bold' : 'opacity-50'}>KU</span>
+                                <span className="opacity-30">/</span>
+                                <span className={language === 'en' ? 'font-bold' : 'opacity-50'}>EN</span>
                             </button>
 
-                            <button onClick={() => setText('')} className="text-xs text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 px-3 py-1 rounded-full">پاککردنەوە</button>
+                            <div className="w-px h-4 bg-white/10 mx-1 flex-shrink-0"></div>
+
+                            {/* Batch Toggle */}
+                            <button onClick={() => setIsBatchMode(!isBatchMode)} className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50' : 'bg-slate-700/50 text-slate-400 border-transparent hover:bg-slate-700'}`}>
+                                {isBatchMode ? 'مۆدی کۆمەڵ' : 'تاک'}
+                            </button>
+
+                            <button onClick={() => setText('')} className="flex-shrink-0 text-xs text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 px-3 py-1 rounded-full whitespace-nowrap">پاککردنەوە</button>
                         </div>
                     </div>
                     <textarea
@@ -399,25 +408,28 @@ const TTSPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Settings Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Model & Voice */}
-                    <div className="flex flex-col gap-4">
-                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
-                            <h3 className="text-base font-bold text-slate-200 mb-4">مۆدێلی ژیری دەستکرد</h3>
-                            <div className="space-y-2">
-                                {AVAILABLE_MODELS.map((model) => (
-                                    <button key={model.id} onClick={() => setSelectedModel(model)} className={`w-full text-right p-3 rounded-xl border transition-all ${selectedModel.id === model.id ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
-                                        <div className="font-bold text-sm">{model.name}</div>
-                                        <div className="text-[10px] opacity-70 mt-1">{model.description}</div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                {/* Settings Section */}
+                <div className="flex flex-col gap-3">
+                    <button
+                        onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                        className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-between transition-all ${isSettingsOpen ? 'bg-slate-700 text-white' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/10'}`}
+                    >
+                        <span className="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                            ڕێکخستنەکان (دەنگ و شێواز)
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 transition-transform duration-300 ${isSettingsOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
 
-                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10 flex-1">
+                    {/* Collapsible Settings Area */}
+                    <div className={`flex flex-col gap-4 transition-all duration-300 overflow-hidden ${isSettingsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+
+                        {/* Voice Selection */}
+                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
                             <h3 className="text-base font-bold text-slate-200 mb-4">دەنگ هەڵبژێرە</h3>
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                                 {AVAILABLE_VOICES.map((voice) => (
                                     <button key={voice.id} onClick={() => setSelectedVoice(voice)} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${selectedVoice.id === voice.id ? 'bg-indigo-600/20 border-indigo-500/50 ring-1 ring-indigo-500/50' : 'bg-slate-900/40 border-slate-700/50'}`}>
                                         <div className="flex flex-col items-start text-right">
@@ -429,28 +441,26 @@ const TTSPage: React.FC = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Tone & Speed */}
-                    <div className="flex flex-col gap-4">
+                        {/* Tone & Speed */}
                         <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
-                            <h3 className="text-base font-bold text-slate-200 mb-4">خێرایی</h3>
-                            <div className="flex gap-2">
-                                {AVAILABLE_SPEEDS.map((speed) => (
-                                    <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10 flex-1">
                             <h3 className="text-base font-bold text-slate-200 mb-4">شێواز</h3>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-2 gap-2 mb-6 max-h-40 overflow-y-auto custom-scrollbar">
                                 {AVAILABLE_TONES.map((tone) => (
                                     <button key={tone.name} onClick={() => setSelectedTone(tone)} className={`text-right p-2.5 rounded-lg border transition-all ${selectedTone.name === tone.name ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
                                         <div className="font-medium text-xs md:text-sm">{tone.name}</div>
                                     </button>
                                 ))}
                             </div>
+
+                            <h3 className="text-base font-bold text-slate-200 mb-4">خێرایی</h3>
+                            <div className="flex gap-2 flex-wrap">
+                                {AVAILABLE_SPEEDS.map((speed) => (
+                                    <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all min-w-[60px] ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
+                                ))}
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </section>
