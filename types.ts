@@ -30,6 +30,8 @@ export interface BaseHistoryItem {
   type: HistoryItemType;
   timestamp: Date;
   content: string; // The main text content (OCR text, Transcription, or Input Text for TTS)
+  isFavorite?: boolean; // Star/favorite flag
+  tags?: string[]; // User-defined tags for organization
 }
 
 export interface TTSHistoryItem extends BaseHistoryItem {

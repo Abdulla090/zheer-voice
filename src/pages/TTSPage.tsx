@@ -348,11 +348,11 @@ const TTSPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8 h-[calc(100vh-140px)]">
             {/* Right Column: Controls */}
-            <section className="flex-1 space-y-6">
+            <section className="flex flex-col space-y-6 overflow-y-auto custom-scrollbar pr-2">
                 {/* Text Input */}
-                <div className="bg-slate-800/50 rounded-2xl p-1 border border-white/10 shadow-xl backdrop-blur-sm">
+                <div className="bg-slate-800/50 rounded-2xl p-1 border border-white/10 shadow-xl backdrop-blur-sm shrink-0">
                     <div className="p-4 border-b border-white/5 flex justify-between items-center">
                         <label className="text-sm font-bold text-slate-300">{language === 'ku' ? 'دەقی کوردی (سۆرانی)' : 'English Text'}</label>
                         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pl-2">
@@ -409,7 +409,7 @@ const TTSPage: React.FC = () => {
                 </div>
 
                 {/* Settings Section */}
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 shrink-0">
                     <button
                         onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                         className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-between transition-all ${isSettingsOpen ? 'bg-slate-700 text-white' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/10'}`}
@@ -423,51 +423,53 @@ const TTSPage: React.FC = () => {
                         </svg>
                     </button>
 
-                    {/* Collapsible Settings Area */}
-                    <div className={`flex flex-col gap-4 transition-all duration-300 overflow-hidden ${isSettingsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                    {/* Collapsible Settings Area - Fixed height to prevent layout shift */}
+                    {isSettingsOpen && (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
 
-                        {/* Voice Selection */}
-                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
-                            <h3 className="text-base font-bold text-slate-200 mb-4">دەنگ هەڵبژێرە</h3>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                                {AVAILABLE_VOICES.map((voice) => (
-                                    <button key={voice.id} onClick={() => setSelectedVoice(voice)} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${selectedVoice.id === voice.id ? 'bg-indigo-600/20 border-indigo-500/50 ring-1 ring-indigo-500/50' : 'bg-slate-900/40 border-slate-700/50'}`}>
-                                        <div className="flex flex-col items-start text-right">
-                                            <span className="font-bold text-base text-white">{voice.name}</span>
-                                            <span className="text-xs text-slate-400 mt-1">{voice.description}</span>
-                                        </div>
-                                        {selectedVoice.id === voice.id && <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)] shrink-0 mr-2"></div>}
-                                    </button>
-                                ))}
+                            {/* Voice Selection */}
+                            <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
+                                <h3 className="text-base font-bold text-slate-200 mb-4">دەنگ هەڵبژێرە</h3>
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                    {AVAILABLE_VOICES.map((voice) => (
+                                        <button key={voice.id} onClick={() => setSelectedVoice(voice)} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${selectedVoice.id === voice.id ? 'bg-indigo-600/20 border-indigo-500/50 ring-1 ring-indigo-500/50' : 'bg-slate-900/40 border-slate-700/50'}`}>
+                                            <div className="flex flex-col items-start text-right">
+                                                <span className="font-bold text-base text-white">{voice.name}</span>
+                                                <span className="text-xs text-slate-400 mt-1">{voice.description}</span>
+                                            </div>
+                                            {selectedVoice.id === voice.id && <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)] shrink-0 mr-2"></div>}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
+
+                            {/* Tone & Speed */}
+                            <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
+                                <h3 className="text-base font-bold text-slate-200 mb-4">شێواز</h3>
+                                <div className="grid grid-cols-2 gap-2 mb-6 max-h-40 overflow-y-auto custom-scrollbar">
+                                    {AVAILABLE_TONES.map((tone) => (
+                                        <button key={tone.name} onClick={() => setSelectedTone(tone)} className={`text-right p-2.5 rounded-lg border transition-all ${selectedTone.name === tone.name ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
+                                            <div className="font-medium text-xs md:text-sm">{tone.name}</div>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <h3 className="text-base font-bold text-slate-200 mb-4">خێرایی</h3>
+                                <div className="flex gap-2 flex-wrap">
+                                    {AVAILABLE_SPEEDS.map((speed) => (
+                                        <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all min-w-[60px] ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
+                                    ))}
+                                </div>
+                            </div>
+
                         </div>
-
-                        {/* Tone & Speed */}
-                        <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
-                            <h3 className="text-base font-bold text-slate-200 mb-4">شێواز</h3>
-                            <div className="grid grid-cols-2 gap-2 mb-6 max-h-40 overflow-y-auto custom-scrollbar">
-                                {AVAILABLE_TONES.map((tone) => (
-                                    <button key={tone.name} onClick={() => setSelectedTone(tone)} className={`text-right p-2.5 rounded-lg border transition-all ${selectedTone.name === tone.name ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
-                                        <div className="font-medium text-xs md:text-sm">{tone.name}</div>
-                                    </button>
-                                ))}
-                            </div>
-
-                            <h3 className="text-base font-bold text-slate-200 mb-4">خێرایی</h3>
-                            <div className="flex gap-2 flex-wrap">
-                                {AVAILABLE_SPEEDS.map((speed) => (
-                                    <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all min-w-[60px] ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
-                                ))}
-                            </div>
-                        </div>
-
-                    </div>
+                    )}
                 </div>
             </section>
 
-            {/* Left Column: Output */}
-            <section className="w-full lg:w-96 flex flex-col gap-6">
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group">
+            {/* Left Column: Output - Fixed width */}
+            <section className="flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group shrink-0">
                     <div className="absolute top-0 left-0 -ml-16 -mt-16 w-32 h-32 bg-soran-500/20 blur-3xl rounded-full group-hover:bg-soran-500/30 transition-all duration-700"></div>
                     <button onClick={handleGenerate} disabled={status === TTSStatus.GENERATING || !text} className={`w-full relative py-4 rounded-xl font-bold text-xl tracking-wide shadow-lg transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden ${status === TTSStatus.GENERATING || !text ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-soran-600 text-white hover:scale-[1.02]'}`}>
                         {status === TTSStatus.GENERATING ? <span className="font-kurdish flex items-center gap-2">جێبەجێکردن... {bgProcessing > 0 && `(${bgProcessing})`}</span> : <span className="font-kurdish">دروستکردنی دەنگ</span>}
@@ -475,7 +477,7 @@ const TTSPage: React.FC = () => {
                     {errorMsg && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-200 text-sm text-center font-kurdish">{errorMsg}</div>}
                 </div>
 
-                <div className={`transition-all duration-500 ${audioBuffer ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-4 pointer-events-none grayscale'}`}>
+                <div className={`transition-all duration-500 shrink-0 ${audioBuffer ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-4 pointer-events-none grayscale'}`}>
                     <div className="bg-slate-800/80 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-lg">
                         <div className="flex justify-between items-end mb-4">
                             <div className="text-right"><h4 className="text-white font-bold text-lg">پێشبینینی دەنگ</h4><p className="text-xs text-slate-400 mt-1 font-sans">{selectedVoice.name}</p></div>
@@ -500,9 +502,10 @@ const TTSPage: React.FC = () => {
                     </div>
                 </div>
 
-                {history.length > 0 && (
-                    <div className="bg-slate-800/40 p-4 rounded-3xl border border-white/5">
-                        <h4 className="text-slate-400 text-sm font-bold mb-3 px-2">دوایین بەرهەمەکان</h4>
+                {/* History - Always reserve space to prevent layout shift */}
+                <div className="bg-slate-800/40 p-4 rounded-3xl border border-white/5 min-h-[120px] shrink-0">
+                    <h4 className="text-slate-400 text-sm font-bold mb-3 px-2">دوایین بەرهەمەکان</h4>
+                    {history.length > 0 ? (
                         <div className="space-y-2">
                             {history.map((item) => (
                                 <div key={item.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl hover:bg-slate-800 transition-colors group">
@@ -511,8 +514,12 @@ const TTSPage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="flex items-center justify-center h-16 text-slate-600 text-xs">
+                            هیچ مێژوویەک نییە
+                        </div>
+                    )}
+                </div>
             </section>
         </div>
     );

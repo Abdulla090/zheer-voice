@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './src/components/Layout/Layout';
@@ -11,6 +12,8 @@ import HistoryPage from './src/pages/HistoryPage';
 import TranslatePage from './src/pages/TranslatePage';
 import SettingsPage from './src/pages/SettingsPage';
 import VideoTranslatePage from './src/pages/VideoTranslatePage';
+import DocumentTranslatePage from './src/pages/DocumentTranslatePage';
+
 
 
 import { ToastProvider } from './src/components/Toast/ToastProvider';
@@ -44,6 +47,7 @@ const App: React.FC = () => {
             <Route path="/ocr" element={<OCRPage />} />
             <Route path="/grammar" element={<GrammarPage />} />
             <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/document-translate" element={<DocumentTranslatePage />} />
             <Route path="/video-translate" element={<VideoTranslatePage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />

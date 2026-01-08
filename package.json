@@ -15,11 +15,13 @@
     "framer-motion": "^12.23.26",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.561.0",
+    "mammoth": "^1.11.0",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.2.2",
     "react-dom": "^19.2.2",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.10.1"
+    "react-router-dom": "^7.10.1",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

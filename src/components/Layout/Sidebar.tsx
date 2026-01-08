@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Mic, Image as ImageIcon, Wand2, History, X, AudioWaveform, Home, Languages, Settings, Film } from 'lucide-react';
+import { Mic, Image as ImageIcon, Wand2, History, X, AudioWaveform, Home, Languages, Settings, Film, FileText, BookOpen } from 'lucide-react';
 
-import { motion, AnimatePresence } from 'framer-motion';
+
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) => {
     const location = useLocation();
@@ -20,6 +21,7 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
         { icon: <ImageIcon size={20} />, label: 'سکێنەر (OCR)', path: '/ocr' },
         { icon: <Wand2 size={20} />, label: 'باشساز (Grammar)', path: '/grammar' },
         { icon: <Languages size={20} />, label: 'وەرگێڕ (Translate)', path: '/translate' },
+        { icon: <BookOpen size={20} />, label: 'وەرگێڕی بەڵگەنامە (Doc)', path: '/document-translate' },
         { icon: <Film size={20} />, label: 'وەرگێڕی ڤیدیۆ (Video)', path: '/video-translate' },
         { icon: <History size={20} />, label: 'مێژوو', path: '/history' },
         { icon: <Settings size={20} />, label: 'ڕێکخستنەکان', path: '/settings' },
@@ -63,7 +65,21 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto relative">
+                    {/* Sliding Active Indicator */}
+                    <motion.div
+                        className="absolute left-0 w-1 bg-soran-500 rounded-r-full z-10 hidden lg:block"
+                        style={{ height: '40px' }}
+                        animate={{
+                            y: menuItems.findIndex(item => item.path === location.pathname) * 46 + 1
+                        }}
+                        transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30
+                        }}
+                    />
+
                     {menuItems.map((item) => {
                         const isActive = location.pathname === item.path;
                         return (
@@ -71,19 +87,13 @@ const Sidebar = ({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolea
                                 key={item.path}
                                 to={item.path}
                                 onClick={() => window.innerWidth < 1024 && setIsOpen(false)}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden ${isActive
-                                    ? 'bg-gradient-to-r from-soran-600/20 to-indigo-600/20 text-white border border-soran-500/30 shadow-lg shadow-soran-500/10'
-                                    : 'text-slate-400 hover:text-slate-100 hover:bg-white/5'
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg group relative overflow-hidden border ${isActive
+                                    ? 'bg-gradient-to-r from-soran-600/20 to-indigo-600/20 text-white border-soran-500/30 shadow-lg shadow-soran-500/10'
+                                    : 'text-slate-400 hover:text-slate-100 hover:bg-white/5 border-transparent'
                                     }`}
                             >
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute left-0 top-0 h-full w-1 bg-soran-500 rounded-r-full"
-                                    />
-                                )}
                                 <span className={`${isActive ? 'text-soran-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
-                                    {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
+                                    {React.cloneElement(item.icon as any, { size: 18 })}
                                 </span>
                                 <span className="font-bold text-sm relative z-10">{item.label}</span>
                             </Link>

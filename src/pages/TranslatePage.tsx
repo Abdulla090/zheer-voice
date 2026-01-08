@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Languages, ArrowLeftRight, Copy, Loader2, Star, Volume2, BookOpen, Trash2, X } from 'lucide-react';
-import { improveText, generateSpeech } from '../../services/geminiService';
+import { Languages, ArrowLeftRight, Copy, Loader2, Star, Volume2, BookOpen, Trash2, X, Image as ImageIcon, Upload } from 'lucide-react';
+import { improveText, generateSpeech, extractTextFromImage } from '../../services/geminiService';
 import { useToast } from '../components/Toast/ToastProvider';
 import FormattedText from '../components/FormattedText';
 import { savePhrase, getPhrases, deletePhrase, SavedPhrase } from '../../services/phrasebookService';
@@ -12,6 +12,7 @@ const TranslatePage: React.FC = () => {
     const [inputText, setInputText] = useState('');
     const [outputText, setOutputText] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isExtractingText, setIsExtractingText] = useState(false);
     const [direction, setDirection] = useState<'to_kurdish' | 'from_kurdish'>('to_kurdish');
 
     // Phrasebook state
@@ -23,6 +24,7 @@ const TranslatePage: React.FC = () => {
     const [isPlayingAudio, setIsPlayingAudio] = useState(false);
     const audioContextRef = useRef<AudioContext | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const apiKey = localStorage.getItem('gemini_api_key');
     const { showToast } = useToast();
@@ -63,6 +65,49 @@ const TranslatePage: React.FC = () => {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !apiKey) {
+            if (!apiKey) showToast("تکایە سەرەتا کلیلی API زیاد بکە", 'error');
+            return;
+        }
+
+        if (!/^image\//.test(file.type)) {
+            showToast("تکایە تەنها وێنە هەڵبژێرە", 'error');
+            return;
+        }
+
+        setIsExtractingText(true);
+        try {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64String = reader.result as string;
+                // Remove data URL prefix
+                const base64Content = base64String.split(',')[1];
+
+                showToast("خەریکی دەرهێنانی دەق...", 'info');
+                try {
+                    const extractedText = await extractTextFromImage(apiKey, base64Content, file.type);
+                    setInputText(extractedText);
+                    showToast("دەقەکە بە سەرکەوتوویی دەرهێنرا", 'success');
+                } catch (error) {
+                    console.error("Extraction error:", error);
+                    showToast("نەتوانرا دەق لە وێنەکە دەربهێنرێت", 'error');
+                } finally {
+                    setIsExtractingText(false);
+                }
+            };
+            reader.readAsDataURL(file);
+        } catch (error) {
+            console.error("File reading error:", error);
+            setIsExtractingText(false);
+            showToast("کێشەیەک لە خوێندنەوەی پەڕگەکە هەیە", 'error');
+        }
+
+        // Reset input
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -170,13 +215,32 @@ const TranslatePage: React.FC = () => {
                 <span className={`text-sm font-bold ${direction === 'to_kurdish' ? 'text-blue-400' : 'text-slate-400'}`}>زمانەکەی تر</span>
             </div>
 
-            <textarea
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={direction === 'to_kurdish' ? "دەقی ئینگلیزی/عەرەبی..." : "دەقی کوردی..."}
-                className="w-full h-32 bg-slate-800/50 border border-white/10 rounded-xl p-4 text-sm resize-none focus:outline-none focus:border-blue-500/50 placeholder-slate-600 font-kurdish"
-            />
+            <div className="relative">
+                <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={direction === 'to_kurdish' ? "دەقی ئینگلیزی/عەرەبی..." : "دەقی کوردی..."}
+                    className="w-full h-32 bg-slate-800/50 border border-white/10 rounded-xl p-4 text-sm resize-none focus:outline-none focus:border-blue-500/50 placeholder-slate-600 font-kurdish pr-10"
+                />
+
+                {/* Mobile Image Upload Button */}
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                />
+                <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isExtractingText}
+                    className="absolute top-2 left-2 p-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-white/5"
+                    title="وێنه‌ به‌کاربهێنه‌"
+                >
+                    {isExtractingText ? <Loader2 size={16} className="animate-spin text-blue-400" /> : <ImageIcon size={16} />}
+                </button>
+            </div>
 
             <button
                 onClick={handleTranslate}
@@ -254,7 +318,20 @@ const TranslatePage: React.FC = () => {
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                             {direction === 'to_kurdish' ? 'دەقی سەرچاوە (ئینگلیزی/عەرەبی)' : 'دەقی کوردی'}
                         </span>
-                        <span className="text-[10px] text-slate-600">{inputText.length} پیت</span>
+
+                        <div className="flex items-center gap-3">
+                            {/* Image Upload Button */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isExtractingText}
+                                className="flex items-center gap-1.5 text-[10px] bg-slate-700/50 hover:bg-slate-700 text-blue-400 px-2 py-1 rounded border border-blue-500/30 transition-colors"
+                            >
+                                {isExtractingText ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
+                                <span>لە وێنەوە</span>
+                            </button>
+
+                            <span className="text-[10px] text-slate-600 border-r border-white/5 pr-3 mr-1">{inputText.length} پیت</span>
+                        </div>
                     </div>
                     <textarea
                         value={inputText}

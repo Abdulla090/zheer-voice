@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AudioWaveform, Mic, Image as ImageIcon, Wand2, Zap, ChevronLeft, Languages, Film } from 'lucide-react';
+import { AudioWaveform, Mic, Image as ImageIcon, Wand2, Zap, ChevronLeft, Languages, Film, FileText } from 'lucide-react';
 
 import { getStats, AppStats } from '../../services/usageService';
 
@@ -70,6 +70,17 @@ const HomePage: React.FC = () => {
             link: '/translate'
         },
         {
+            id: 'document',
+            title: 'وەرگێڕی بەڵگەنامە',
+            subtitle: 'Document Translator',
+            description: 'PDF و DOCX بۆ کوردی',
+            icon: <FileText />,
+            color: 'from-violet-500 to-purple-600',
+            bgColor: 'bg-violet-500/10',
+            textColor: 'text-violet-400',
+            link: '/document-translate'
+        },
+        {
             id: 'video-translate',
             title: 'وەرگێڕی ڤیدیۆ',
             subtitle: 'Video Translator',
@@ -104,7 +115,7 @@ const HomePage: React.FC = () => {
                     <Link key={f.id} to={f.link}>
                         <div className={`${f.bgColor} border border-white/5 rounded-2xl p-4 h-full`}>
                             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center text-white mb-3`}>
-                                {React.cloneElement(f.icon as React.ReactElement, { size: 20 })}
+                                {React.cloneElement(f.icon as any, { size: 20 })}
                             </div>
                             <h3 className="font-bold text-white text-sm">{f.title}</h3>
                             <p className="text-[10px] text-slate-400 mt-1">{f.description}</p>
@@ -150,8 +161,8 @@ const HomePage: React.FC = () => {
             {/* Bento Grid: Main Features */}
             <div className="flex-1 grid grid-cols-12 grid-rows-3 gap-4">
 
-                {/* TTS - Large Card */}
-                <Link to="/tts" className="col-span-5 row-span-2 group">
+                {/* TTS - Large Card (4 cols, 2 rows) */}
+                <Link to="/tts" className="col-span-4 row-span-2 group">
                     <div className="h-full bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-white/5 rounded-2xl p-6 relative overflow-hidden hover:border-blue-500/30 transition-all duration-300">
                         <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700"></div>
 
@@ -163,7 +174,7 @@ const HomePage: React.FC = () => {
                             <div className="mt-auto">
                                 <span className="text-[10px] text-blue-400 uppercase tracking-widest">Voice Studio</span>
                                 <h2 className="text-2xl font-black text-white mt-1">دەنگساز</h2>
-                                <p className="text-sm text-slate-400 mt-2 leading-relaxed">دەقەکانت بکە بە دەنگی کوردی سروشتی و زیندوو. پشتیوانی دەنگە جیاوازەکان.</p>
+                                <p className="text-sm text-slate-400 mt-2 leading-relaxed">دەقەکانت بکە بە دەنگی کوردی سروشتی و زیندوو.</p>
 
                                 <div className="mt-4 flex items-center text-xs font-bold text-blue-400 group-hover:text-white transition-colors">
                                     دەستپێبکە
@@ -174,7 +185,7 @@ const HomePage: React.FC = () => {
                     </div>
                 </Link>
 
-                {/* STT - Medium Card */}
+                {/* STT (4 cols) */}
                 <Link to="/stt" className="col-span-4 row-span-1 group">
                     <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-emerald-500/30 transition-all duration-300 flex flex-col">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
@@ -195,8 +206,8 @@ const HomePage: React.FC = () => {
                     </div>
                 </Link>
 
-                {/* OCR - Medium Card */}
-                <Link to="/ocr" className="col-span-3 row-span-1 group">
+                {/* OCR (4 cols - Resized from 3) */}
+                <Link to="/ocr" className="col-span-4 row-span-1 group">
                     <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-pink-500/30 transition-all duration-300 flex flex-col">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 
@@ -216,40 +227,82 @@ const HomePage: React.FC = () => {
                     </div>
                 </Link>
 
-                {/* Grammar - Wide Card */}
-                <Link to="/grammar" className="col-span-7 row-span-1 group">
-                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-purple-500/30 transition-all duration-300 flex items-center gap-6">
-                        <div className="absolute top-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl -ml-20 -mt-20"></div>
+                {/* Grammar (4 cols - Resized from 7) */}
+                <Link to="/grammar" className="col-span-4 row-span-1 group">
+                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-purple-500/30 transition-all duration-300 flex flex-col">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 
-                        <div className="w-14 h-14 shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white relative z-10">
-                            <Wand2 size={28} />
+                        <div className="flex items-center gap-3 relative z-10">
+                            <div className="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white">
+                                <Wand2 size={20} />
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-purple-400 uppercase tracking-widest">Grammar</span>
+                                <h3 className="text-lg font-bold text-white">باشساز</h3>
+                            </div>
                         </div>
-                        <div className="relative z-10 flex-1">
-                            <span className="text-[10px] text-purple-400 uppercase tracking-widest">Grammar Fixer</span>
-                            <h3 className="text-xl font-bold text-white">باشساز</h3>
-                            <p className="text-xs text-slate-400 mt-1">هەڵە ڕێنووسی و ڕێزمانییەکانت راست بکەوە و دەقەکەت جوانتر بکە بە یەک کلیک.</p>
-                        </div>
-                        <div className="shrink-0 flex items-center text-xs font-bold text-purple-400 group-hover:text-white transition-colors relative z-10">
-                            بیتاقیبکەوە <ChevronLeft className="mr-1 w-4 h-4" />
+                        <p className="text-xs text-slate-400 mt-3 relative z-10">هەڵەکانت راست بکەوە.</p>
+                        <div className="mt-auto pt-3 flex items-center text-[10px] font-bold text-purple-400 group-hover:text-white transition-colors relative z-10">
+                            بیتاقیبکەوە <ChevronLeft className="mr-1 w-3 h-3" />
                         </div>
                     </div>
                 </Link>
 
-                {/* Video Translate - Wide Card */}
-                <Link to="/video-translate" className="col-span-12 row-span-1 group">
-                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-orange-500/30 transition-all duration-300 flex items-center gap-6">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                {/* General Translate (4 cols - NEW) */}
+                <Link to="/translate" className="col-span-4 row-span-1 group">
+                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-cyan-500/30 transition-all duration-300 flex flex-col">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 
-                        <div className="w-14 h-14 shrink-0 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white relative z-10 shadow-lg shadow-orange-500/20">
-                            <Film size={28} />
+                        <div className="flex items-center gap-3 relative z-10">
+                            <div className="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white">
+                                <Languages size={20} />
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-cyan-400 uppercase tracking-widest">Translate</span>
+                                <h3 className="text-lg font-bold text-white">وەرگێڕ</h3>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-3 relative z-10">وەرگێڕانی کوردی ↔ ئینگلیزی.</p>
+                        <div className="mt-auto pt-3 flex items-center text-[10px] font-bold text-cyan-400 group-hover:text-white transition-colors relative z-10">
+                            بیتاقیبکەوە <ChevronLeft className="mr-1 w-3 h-3" />
+                        </div>
+                    </div>
+                </Link>
+
+                {/* Document Translate (6 cols - NEW) */}
+                <Link to="/document-translate" className="col-span-6 row-span-1 group">
+                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-violet-500/30 transition-all duration-300 flex items-center gap-4">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+
+                        <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white relative z-10">
+                            <FileText size={24} />
                         </div>
                         <div className="relative z-10 flex-1">
-                            <span className="text-[10px] text-orange-400 uppercase tracking-widest">Video Translator</span>
-                            <h3 className="text-xl font-bold text-white">وەرگێڕی ڤیدیۆ</h3>
-                            <p className="text-xs text-slate-400 mt-1">ڤیدیۆکان لە هەموو زمانێکەوە بۆ کوردی سۆرانی وەربگێڕە و لەگەڵ ناوەڕۆکەکە گفتوگۆ بکە.</p>
+                            <span className="text-[10px] text-violet-400 uppercase tracking-widest">Docs</span>
+                            <h3 className="text-lg font-bold text-white">وەرگێڕی بەڵگەنامە</h3>
+                            <p className="text-xs text-slate-400 mt-1">PDF و DOCX بۆ کوردی.</p>
+                        </div>
+                        <div className="shrink-0 flex items-center text-xs font-bold text-violet-400 group-hover:text-white transition-colors relative z-10">
+                            <ChevronLeft className="w-5 h-5" />
+                        </div>
+                    </div>
+                </Link>
+
+                {/* Video Translate (6 cols - Resized from 12) */}
+                <Link to="/video-translate" className="col-span-6 row-span-1 group">
+                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-orange-500/30 transition-all duration-300 flex items-center gap-4">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+
+                        <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white relative z-10 shadow-lg shadow-orange-500/20">
+                            <Film size={24} />
+                        </div>
+                        <div className="relative z-10 flex-1">
+                            <span className="text-[10px] text-orange-400 uppercase tracking-widest">Video</span>
+                            <h3 className="text-lg font-bold text-white">وەرگێڕی ڤیدیۆ</h3>
+                            <p className="text-xs text-slate-400 mt-1">وەرگێڕانی ڤیدیۆکان.</p>
                         </div>
                         <div className="shrink-0 flex items-center text-xs font-bold text-orange-400 group-hover:text-white transition-colors relative z-10">
-                            بیتاقیبکەوە <ChevronLeft className="mr-1 w-4 h-4" />
+                            <ChevronLeft className="w-5 h-5" />
                         </div>
                     </div>
                 </Link>

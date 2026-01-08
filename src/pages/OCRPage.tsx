@@ -187,22 +187,18 @@ const OCRPage: React.FC = () => {
         }
     };
 
-    // Toggle Component
-    const ToggleSwitch = ({ small = false }: { small?: boolean }) => (
-        <label className={`flex items-center gap-2 cursor-pointer ${small ? 'text-xs' : 'text-sm'}`}>
-            <div className="relative">
-                <input
-                    type="checkbox"
-                    checked={fixKurdishLetters}
-                    onChange={(e) => setFixKurdishLetters(e.target.checked)}
-                    className="sr-only"
-                />
-                <div className={`${small ? 'w-8 h-4' : 'w-10 h-5'} bg-slate-700 rounded-full transition-colors ${fixKurdishLetters ? 'bg-pink-600' : ''}`}></div>
-                <div className={`absolute top-0.5 ${small ? 'left-0.5 w-3 h-3' : 'left-0.5 w-4 h-4'} bg-white rounded-full transition-transform ${fixKurdishLetters ? (small ? 'translate-x-4' : 'translate-x-5') : ''}`}></div>
-            </div>
-            <span className="text-slate-300 flex items-center gap-1">
-                {fixKurdishLetters ? <SpellCheck size={small ? 12 : 14} className="text-pink-400" /> : <Zap size={small ? 12 : 14} className="text-emerald-400" />}
-                {fixKurdishLetters ? 'چاککردنی پیتەکان' : 'خێرا'}
+    // Checkbox Component for Letter Fixing
+    const LetterFixCheckbox = ({ small = false }: { small?: boolean }) => (
+        <label className={`flex items-center gap-2 cursor-pointer group ${small ? 'text-xs' : 'text-sm'}`}>
+            <input
+                type="checkbox"
+                checked={fixKurdishLetters}
+                onChange={(e) => setFixKurdishLetters(e.target.checked)}
+                className="w-4 h-4 rounded border-2 border-slate-600 bg-slate-800 checked:bg-pink-600 checked:border-pink-600 cursor-pointer transition-all focus:ring-2 focus:ring-pink-500/50 focus:ring-offset-0"
+            />
+            <span className="text-slate-300 group-hover:text-white transition-colors font-kurdish flex items-center gap-1">
+                <SpellCheck size={small ? 12 : 14} className={fixKurdishLetters ? 'text-pink-400' : 'text-slate-500'} />
+                چاککردنی پیتەکانی کوردی
             </span>
         </label>
     );
@@ -217,7 +213,7 @@ const OCRPage: React.FC = () => {
                     <ImageIcon size={20} className="text-pink-400" />
                     سکێنەر (OCR)
                 </h1>
-                <ToggleSwitch small />
+                <LetterFixCheckbox small />
             </div>
 
             {images.length === 0 ? (
@@ -285,7 +281,7 @@ const OCRPage: React.FC = () => {
             <div className="bg-slate-800/30 border border-white/5 rounded-2xl p-6 flex flex-col">
                 <div className="mb-4 shrink-0 flex items-center justify-between">
                     <h2 className="text-base font-bold text-white flex items-center gap-2"><ImageIcon size={18} className="text-pink-400" /> وێنەی سەرچاوە ({images.length})</h2>
-                    <ToggleSwitch />
+                    <LetterFixCheckbox />
                 </div>
 
                 {images.length === 0 ? (
