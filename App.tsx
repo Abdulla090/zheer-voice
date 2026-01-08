@@ -10,6 +10,8 @@ import GrammarPage from './src/pages/GrammarPage';
 import HistoryPage from './src/pages/HistoryPage';
 import TranslatePage from './src/pages/TranslatePage';
 import SettingsPage from './src/pages/SettingsPage';
+import VideoTranslatePage from './src/pages/VideoTranslatePage';
+
 
 import { ToastProvider } from './src/components/Toast/ToastProvider';
 
@@ -42,8 +44,10 @@ const App: React.FC = () => {
             <Route path="/ocr" element={<OCRPage />} />
             <Route path="/grammar" element={<GrammarPage />} />
             <Route path="/translate" element={<TranslatePage />} />
+            <Route path="/video-translate" element={<VideoTranslatePage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+
           </Routes>
         </Layout>
       </Router>

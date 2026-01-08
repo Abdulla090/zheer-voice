@@ -141,3 +141,29 @@ export const SAMPLE_TEXTS = [
   "کوردستان نیشتمانی جوان و دڵگیرە، شاخەکانی بەرز و ئاوەکەی ڕوونە.",
   "شیعر دەرگایەکە بۆ جیهانی خەیاڵ، وشەکان وەک مۆسیقا سەمای تێدا دەکەن."
 ];
+
+// Video Translation Constants
+export const SUPPORTED_VIDEO_FORMATS = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/x-matroska'
+];
+
+export const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+export const MAX_VIDEO_DURATION = 7200; // 2 hours in seconds
+
+export const SUPPORTED_LANGUAGES: Record<string, string> = {
+  'en': 'English',
+  'ar': 'عەرەبی (Arabic)',
+  'es': 'ئیسپانی (Spanish)',
+  'ko': 'کۆری (Korean)',
+  'fr': 'فەرەنسی (French)',
+  'tr': 'تورکی (Turkish)',
+  'fa': 'فارسی (Persian)',
+  'de': 'ئەڵمانی (German)',
+  'zh': 'چینی (Chinese)',
+  'ja': 'ژاپۆنی (Japanese)',
+  'auto': 'خۆکار (Auto-detect)'
+};

@@ -362,3 +362,85 @@ export const extractTextFromImage = async (
     throw error;
   }
 };
+
+/**
+ * Transcribe video audio with language detection
+ * Returns original transcript for translation pipeline
+ */
+export const transcribeVideoAudio = async (
+  apiKey: string,
+  base64Audio: string,
+  mimeType: string = 'audio/wav'
+): Promise<{ text: string; language: string }> => {
+  if (!apiKey) throw new Error('API Key is missing.');
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `
+Listen to the attached audio carefully.
+
+Tasks:
+1. Transcribe the speech EXACTLY as spoken in its ORIGINAL language
+2. Detect the language of the speech
+
+Output format (JSON):
+{
+  "text": "exact transcription",
+  "language": "language code (en, ar, es, ko, fa, tr, fr, etc.)"
+}
+
+Provide ONLY the JSON output, no additional text.
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Audio
+              }
+            }
+          ]
+        }
+      ]
+    });
+
+    const output = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!output) throw new Error('No transcription returned.');
+
+    // Parse JSON response
+    try {
+      const jsonMatch = output.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const result = JSON.parse(jsonMatch[0]);
+        return {
+          text: result.text || output,
+          language: result.language || 'unknown'
+        };
+      }
+    } catch (parseError) {
+      // Fallback if JSON parsing fails
+      return {
+        text: output.trim(),
+        language: 'unknown'
+      };
+    }
+
+    return {
+      text: output.trim(),
+      language: 'unknown'
+    };
+
+  } catch (error: any) {
+    console.error('Video transcription error:', error);
+    if (error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+      throw new Error('کۆتایوەی داواکاری! تکایە چەند خولەکێک چاوەڕوان بە.');
+    }
+    throw error;
+  }
+};

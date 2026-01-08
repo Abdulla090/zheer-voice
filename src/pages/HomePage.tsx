@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { AudioWaveform, Mic, Image as ImageIcon, Wand2, Zap, ChevronLeft, Languages } from 'lucide-react';
+import { AudioWaveform, Mic, Image as ImageIcon, Wand2, Zap, ChevronLeft, Languages, Film } from 'lucide-react';
+
 import { getStats, AppStats } from '../../services/usageService';
 
 const HomePage: React.FC = () => {
@@ -67,8 +68,20 @@ const HomePage: React.FC = () => {
             bgColor: 'bg-cyan-500/10',
             textColor: 'text-cyan-400',
             link: '/translate'
+        },
+        {
+            id: 'video-translate',
+            title: 'وەرگێڕی ڤیدیۆ',
+            subtitle: 'Video Translator',
+            description: 'ڤیدیۆکان بۆ کوردی وەربگێڕە',
+            icon: <Film />,
+            color: 'from-orange-500 to-amber-600',
+            bgColor: 'bg-orange-500/10',
+            textColor: 'text-orange-400',
+            link: '/video-translate'
         }
     ];
+
 
     const stats = [
         { label: 'دەنگی دروستکراو', value: usageStats?.ttsCount || 0, icon: <AudioWaveform size={16} />, change: '+100%' },
@@ -135,7 +148,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {/* Bento Grid: Main Features */}
-            <div className="flex-1 grid grid-cols-12 grid-rows-2 gap-4">
+            <div className="flex-1 grid grid-cols-12 grid-rows-3 gap-4">
 
                 {/* TTS - Large Card */}
                 <Link to="/tts" className="col-span-5 row-span-2 group">
@@ -217,6 +230,25 @@ const HomePage: React.FC = () => {
                             <p className="text-xs text-slate-400 mt-1">هەڵە ڕێنووسی و ڕێزمانییەکانت راست بکەوە و دەقەکەت جوانتر بکە بە یەک کلیک.</p>
                         </div>
                         <div className="shrink-0 flex items-center text-xs font-bold text-purple-400 group-hover:text-white transition-colors relative z-10">
+                            بیتاقیبکەوە <ChevronLeft className="mr-1 w-4 h-4" />
+                        </div>
+                    </div>
+                </Link>
+
+                {/* Video Translate - Wide Card */}
+                <Link to="/video-translate" className="col-span-12 row-span-1 group">
+                    <div className="h-full bg-slate-800/50 border border-white/5 rounded-2xl p-5 relative overflow-hidden hover:border-orange-500/30 transition-all duration-300 flex items-center gap-6">
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+
+                        <div className="w-14 h-14 shrink-0 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white relative z-10 shadow-lg shadow-orange-500/20">
+                            <Film size={28} />
+                        </div>
+                        <div className="relative z-10 flex-1">
+                            <span className="text-[10px] text-orange-400 uppercase tracking-widest">Video Translator</span>
+                            <h3 className="text-xl font-bold text-white">وەرگێڕی ڤیدیۆ</h3>
+                            <p className="text-xs text-slate-400 mt-1">ڤیدیۆکان لە هەموو زمانێکەوە بۆ کوردی سۆرانی وەربگێڕە و لەگەڵ ناوەڕۆکەکە گفتوگۆ بکە.</p>
+                        </div>
+                        <div className="shrink-0 flex items-center text-xs font-bold text-orange-400 group-hover:text-white transition-colors relative z-10">
                             بیتاقیبکەوە <ChevronLeft className="mr-1 w-4 h-4" />
                         </div>
                     </div>

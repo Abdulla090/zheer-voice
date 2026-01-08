@@ -60,3 +60,48 @@ export enum TTSStatus {
   PLAYING = 'PLAYING',
   ERROR = 'ERROR',
 }
+
+// Video Translation Types
+export interface VideoMetadata {
+  filename: string;
+  duration: number;
+  size: number;
+  format: string;
+  uploadedAt: number;
+}
+
+export interface TranscriptSegment {
+  id: string;
+  startTime: number;
+  endTime: number;
+  originalText: string;
+  translatedText: string;
+  language: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+export interface VideoContext {
+  metadata: VideoMetadata;
+  originalTranscript: string;
+  kurdishTranslation: string;
+  language: string;
+  segments?: TranscriptSegment[];
+  summary?: string;
+  topics?: string[];
+}
+
+export type ProcessingStage =
+  | 'idle'
+  | 'uploading'
+  | 'extracting'
+  | 'transcribing'
+  | 'translating'
+  | 'generating'
+  | 'complete'
+  | 'error';
