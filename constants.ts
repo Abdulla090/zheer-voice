@@ -48,24 +48,10 @@ export const AVAILABLE_VOICES: VoiceConfig[] = [
     description: 'دەنگێکی نەرم، دۆستانە و نزیک. زۆر باشە بۆ چیرۆک و حەکایەت.'
   },
   {
-    name: 'زاگۆ (Zagor)',
-    originalName: 'Charon',
-    id: 'Charon',
-    gender: 'Male',
-    description: 'دەنگێکی گڕ، پڕ و جدی. گونجاوە بۆ بابەتی مێژوویی و ئەفسانەیی.'
-  },
-  {
-    name: 'نازەنین (Nazanin)',
-    originalName: 'Aoede',
-    id: 'Aoede',
-    gender: 'Female',
-    description: 'دەنگێکی زۆر ڕوون و گفتوگۆیی. زیرەک و بەتوانا دەردەکەوێت.'
-  },
-  {
-    name: 'لانە (Lana)',
+    name: 'ئاسۆ (Aso)',
     originalName: 'Algenib',
     id: 'Algenib',
-    gender: 'Female',
+    gender: 'Male',
     description: 'دەنگێکی گەرم و پڕ متمانە. گونجاوە بۆ پێشکەشکردن و بەڵگەفیلم.'
   },
   {

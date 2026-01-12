@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { decodeBase64, decodeAudioData, getAudioContext } from "./audioUtils";
+import { createPronunciationGuide } from "./textUtils";
 
 export const generateSpeech = async (
   apiKey: string,
@@ -35,29 +36,33 @@ export const generateSpeech = async (
       6. Output: Provide ONLY the audio generation.
     `;
   } else {
-    // DEFAULT: KURDISH SORANI
+    // DEFAULT: KURDISH SORANI - Include phonetic guide
+    const phoneticGuide = createPronunciationGuide(text);
+
     finalPrompt = `
-      Input Text: "${text}"
-      
-      System Instructions:
-      1. Language: **Kurdish Sorani** (Central Kurdish, ISO 639-3: ckb).
-      2. Pronunciation & Phonology: 
-         - You MUST speak with an authentic, native Kurdish Sorani accent.
-         - Pay strict attention to these specific Kurdish letters:
-           - 'ڕ' (rolled R / Trill): Must be pronounced strongly, distinct from normal 'ر'.
-           - 'ڵ' (Velarized L / Dark L): Must be deep and back, distinct from normal 'ل'.
-           - 'ێ' (Yê / Ê): A mid-front unrounded vowel (like 'e' in 'café').
-           - 'ۆ' (O): A mid-back rounded vowel.
-           - 'ژ' (Zh): Voiced postalveolar fricative (like 's' in 'measure').
-           - 'ڤ' (V): Voiced labiodental fricative.
-           - 'گ' (G): Voiced velar stop (hard G).
-         - Ensure the prosody and intonation match native Kurdish speech patterns (not Arabic or Persian).
-      3. Strict Output Rules:
-         - Do NOT translate the text. Read it exactly as written.
-         - Do NOT add introductory or concluding remarks (e.g., "Here is the audio").
-      4. Tone/Style: ${toneInstruction}
-      5. Speed: Read this text ${speedInstruction}.
-      6. Output: Provide ONLY the audio generation.
+SPEAK THIS KURDISH SORANI TEXT EXACTLY:
+
+ORIGINAL: "${text}"
+PRONUNCIATION GUIDE: "${phoneticGuide}"
+
+KEY PRONUNCIATION:
+• ڕ (shown as ṛ) = ROLLED R like Spanish "perro" 
+• ر = soft tap R, NOT rolled
+• ڵ (shown as ḷ) = DARK L like "ball"
+• ل = light L like "love"
+• ێ (shown as ē) = "ay" in "day"
+• ۆ (shown as ō) = "o" in "go"
+• گ = hard G like "go"
+
+RULES:
+- Read the ORIGINAL text, use GUIDE for pronunciation reference
+- Do NOT add extra vowel sounds (no "ə" or "a" between consonants)
+- ڕ and ر are DIFFERENT - rolled vs soft
+- ڵ and ل are DIFFERENT - dark vs light
+
+STYLE: ${toneInstruction}
+SPEED: ${speedInstruction}
+OUTPUT: Natural Kurdish speech only.
     `;
   }
 

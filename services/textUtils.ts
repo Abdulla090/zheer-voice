@@ -65,6 +65,9 @@ export function numberToKurdishText(num: number): string {
     return words;
 }
 
+/**
+ * Normalize Kurdish text - fix characters and convert numbers
+ */
 export function normalizeKurdishText(text: string): string {
     // 1. Replace English/Arabic numbers with Kurdish text
     let processedText = text.replace(/\d+/g, (match) => {
@@ -87,3 +90,49 @@ export function normalizeKurdishText(text: string): string {
 
     return processedText;
 }
+
+/**
+ * Add phonetic hints to help TTS pronounce Kurdish letters correctly.
+ * This replaces special letters with phonetic annotations.
+ * Use this when the TTS model struggles with certain sounds.
+ */
+export function addPhoneticHints(text: string): string {
+    // Add subtle hints without breaking the text
+    // The model should read these as pronunciation guides
+    let hinted = text;
+
+    // Mark rolled R distinctly - add a small phonetic marker
+    // Using parenthetical hints that the model can interpret
+    hinted = hinted.replace(/ڕ/g, 'ڕ[RR]');
+
+    // Mark dark L distinctly
+    hinted = hinted.replace(/ڵ/g, 'ڵ[LL]');
+
+    return hinted;
+}
+
+/**
+ * Alternative: Create a phonetic transcription guide
+ * Returns the text with IPA-style pronunciation guide
+ */
+export function createPronunciationGuide(text: string): string {
+    const phoneticMap: Record<string, string> = {
+        'ڕ': 'ṛ', // Rolled R marker
+        'ڵ': 'ḷ', // Dark L marker  
+        'ێ': 'ē', // Long e/ay
+        'ۆ': 'ō', // Long o
+        'گ': 'g', // Hard g
+        'ژ': 'zh',
+        'ڤ': 'v',
+        'چ': 'ch',
+        'ش': 'sh',
+    };
+
+    let guide = text;
+    for (const [kurdish, phonetic] of Object.entries(phoneticMap)) {
+        guide = guide.replace(new RegExp(kurdish, 'g'), phonetic);
+    }
+
+    return guide;
+}
+
