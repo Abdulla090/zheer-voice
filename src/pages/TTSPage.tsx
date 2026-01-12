@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Waveform from '../../components/Waveform';
 import { AVAILABLE_VOICES, AVAILABLE_TONES, AVAILABLE_SPEEDS, SAMPLE_TEXTS, AVAILABLE_MODELS } from '../../constants';
-import { VoiceConfig, ToneConfig, SpeedConfig, TTSStatus, GeneratedAudio, ModelConfig } from '../../types';
+import { VoiceConfig, ToneConfig, SpeedConfig, TTSStatus, GeneratedAudio, ModelConfig, TTSHistoryItem } from '../../types';
 import { generateSpeech, improveText } from '../../services/geminiService';
 import { getAudioContext, audioBufferToWav } from '../../services/audioUtils';
 import { normalizeKurdishText } from '../../services/textUtils';
@@ -125,10 +125,12 @@ const TTSPage: React.FC = () => {
         }
     }, []);
 
-    // Load History
+    // Load History (filter to only TTS items)
     useEffect(() => {
         loadHistory().then(items => {
-            setHistory(items);
+            // Filter to only include TTS history items for this page
+            const ttsItems = items.filter((item): item is TTSHistoryItem => item.type === 'TTS');
+            setHistory(ttsItems);
         });
     }, []);
 
@@ -348,48 +350,47 @@ const TTSPage: React.FC = () => {
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr,400px] gap-8 h-[calc(100vh-140px)]">
-            {/* Right Column: Controls */}
-            <section className="flex flex-col space-y-6 overflow-y-auto custom-scrollbar pr-2">
+        <div className="flex flex-col lg:grid lg:grid-cols-[1fr,400px] gap-6 lg:gap-8 pb-6">
+            {/* Controls Section - flows naturally on mobile */}
+            <section className="flex flex-col space-y-4 lg:space-y-6">
                 {/* Text Input */}
-                <div className="bg-slate-800/50 rounded-2xl p-1 border border-white/10 shadow-xl backdrop-blur-sm shrink-0">
-                    <div className="p-4 border-b border-white/5 flex justify-between items-center">
-                        <label className="text-sm font-bold text-slate-300">{language === 'ku' ? 'دەقی کوردی (سۆرانی)' : 'English Text'}</label>
-                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pl-2">
+                <div className="bg-slate-800/50 rounded-2xl border border-white/10 shadow-xl backdrop-blur-sm">
+                    <div className="p-3 md:p-4 border-b border-white/5">
+                        <label className="text-sm font-bold text-slate-300 block mb-3">{language === 'ku' ? 'دەقی کوردی (سۆرانی)' : 'English Text'}</label>
+                        {/* Toolbar - Horizontal scroll on mobile, wraps on desktop */}
+                        <div className="flex items-center gap-2 flex-wrap">
                             {/* Smart Tools */}
                             <button
                                 onClick={() => handleImproveText('fix_grammar')}
                                 disabled={status === TTSStatus.GENERATING}
-                                className="flex-shrink-0 flex items-center gap-1 text-[10px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded transition-colors border border-emerald-500/20 whitespace-nowrap"
+                                className="flex items-center gap-1.5 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-3 py-2 rounded-lg transition-colors border border-emerald-500/20 active:scale-95"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" clipRule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" clipRule="evenodd" /></svg>
                                 چاککردن
                             </button>
 
                             <button
                                 onClick={() => handleImproveText('translate_to_kurdish')}
                                 disabled={status === TTSStatus.GENERATING}
-                                className="flex-shrink-0 flex items-center gap-1 text-[10px] bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-2 py-1 rounded transition-colors border border-purple-500/20 whitespace-nowrap"
+                                className="flex items-center gap-1.5 text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 px-3 py-2 rounded-lg transition-colors border border-purple-500/20 active:scale-95"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.89 18.89 0 01-2.46 6.374 18.897 18.897 0 016 3.126 1 1 0 101.414-1.414 20.9 20.9 0 00-5.698-3.053c.681-1.04 1.5-2.008 2.459-2.803a1 1 0 10-1.415-1.414 16.92 16.92 0 00-2.388 2.924H2a1 1 0 010-2h4V3a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.89 18.89 0 01-2.46 6.374 18.897 18.897 0 016 3.126 1 1 0 101.414-1.414 20.9 20.9 0 00-5.698-3.053c.681-1.04 1.5-2.008 2.459-2.803a1 1 0 10-1.415-1.414 16.92 16.92 0 00-2.388 2.924H2a1 1 0 010-2h4V3a1 1 0 011-1z" clipRule="evenodd" /></svg>
                                 وەرگێڕان
                             </button>
 
                             {/* Language Toggle */}
-                            <button onClick={() => setLanguage(l => l === 'ku' ? 'en' : 'ku')} className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border transition-all flex items-center gap-1 ${language === 'en' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-green-500/20 text-green-300 border-green-500/50'}`}>
+                            <button onClick={() => setLanguage(l => l === 'ku' ? 'en' : 'ku')} className={`text-xs px-3 py-2 rounded-lg border transition-all flex items-center gap-1.5 active:scale-95 ${language === 'en' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-green-500/20 text-green-300 border-green-500/50'}`}>
                                 <span className={language === 'ku' ? 'font-bold' : 'opacity-50'}>KU</span>
                                 <span className="opacity-30">/</span>
                                 <span className={language === 'en' ? 'font-bold' : 'opacity-50'}>EN</span>
                             </button>
 
-                            <div className="w-px h-4 bg-white/10 mx-1 flex-shrink-0"></div>
-
                             {/* Batch Toggle */}
-                            <button onClick={() => setIsBatchMode(!isBatchMode)} className={`flex-shrink-0 text-xs px-3 py-1 rounded-full border transition-all whitespace-nowrap ${isBatchMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50' : 'bg-slate-700/50 text-slate-400 border-transparent hover:bg-slate-700'}`}>
+                            <button onClick={() => setIsBatchMode(!isBatchMode)} className={`text-xs px-3 py-2 rounded-lg border transition-all active:scale-95 ${isBatchMode ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50' : 'bg-slate-700/50 text-slate-400 border-slate-600/50 hover:bg-slate-700'}`}>
                                 {isBatchMode ? 'مۆدی کۆمەڵ' : 'تاک'}
                             </button>
 
-                            <button onClick={() => setText('')} className="flex-shrink-0 text-xs text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 px-3 py-1 rounded-full whitespace-nowrap">پاککردنەوە</button>
+                            <button onClick={() => setText('')} className="text-xs text-rose-400 hover:text-rose-300 transition-colors bg-rose-500/10 px-3 py-2 rounded-lg border border-rose-500/20 active:scale-95">پاککردنەوە</button>
                         </div>
                     </div>
                     <textarea
@@ -397,22 +398,32 @@ const TTSPage: React.FC = () => {
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder="لێرە بنووسە... (تکایە دەقی کوردی بنووسە - یان English بۆ وەرگێڕان)"
-                        className="w-full h-48 bg-transparent p-4 text-right font-kurdish text-lg md:text-xl text-white placeholder-slate-600 focus:outline-none resize-none leading-loose"
+                        className="w-full h-32 md:h-48 bg-transparent p-4 text-right font-kurdish text-base md:text-xl text-white placeholder-slate-600 focus:outline-none resize-none leading-loose"
                     />
+                    {/* Sample texts - horizontal scroll */}
                     <div className="p-3 bg-slate-900/50 rounded-b-xl flex gap-2 overflow-x-auto scrollbar-hide">
                         {SAMPLE_TEXTS.map((sample, idx) => (
-                            <button key={idx} onClick={() => setText(sample)} className="whitespace-nowrap px-4 py-2 rounded-full bg-slate-800 border border-slate-700 hover:border-soran-500/50 hover:bg-slate-700 text-xs text-slate-300 transition-all font-kurdish">
+                            <button key={idx} onClick={() => setText(sample)} className="whitespace-nowrap px-4 py-2 rounded-full bg-slate-800 border border-slate-700 hover:border-soran-500/50 hover:bg-slate-700 text-xs text-slate-300 transition-all font-kurdish active:scale-95">
                                 نموونەی {idx + 1}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Settings Section */}
-                <div className="flex flex-col gap-3 shrink-0">
+                {/* Generate Button - Prominent on mobile */}
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group lg:hidden">
+                    <div className="absolute top-0 left-0 -ml-16 -mt-16 w-32 h-32 bg-soran-500/20 blur-3xl rounded-full group-hover:bg-soran-500/30 transition-all duration-700"></div>
+                    <button onClick={handleGenerate} disabled={status === TTSStatus.GENERATING || !text} className={`w-full relative py-4 rounded-xl font-bold text-lg md:text-xl tracking-wide shadow-lg transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden active:scale-[0.98] ${status === TTSStatus.GENERATING || !text ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-soran-600 text-white'}`}>
+                        {status === TTSStatus.GENERATING ? <span className="font-kurdish flex items-center gap-2">جێبەجێکردن... {bgProcessing > 0 && `(${bgProcessing})`}</span> : <span className="font-kurdish">دروستکردنی دەنگ</span>}
+                    </button>
+                    {errorMsg && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-200 text-sm text-center font-kurdish">{errorMsg}</div>}
+                </div>
+
+                {/* Settings Section - Collapsible */}
+                <div className="flex flex-col gap-3">
                     <button
                         onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                        className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-between transition-all ${isSettingsOpen ? 'bg-slate-700 text-white' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/10'}`}
+                        className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-between transition-all active:scale-[0.98] ${isSettingsOpen ? 'bg-slate-700 text-white' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 hover:text-white border border-white/10'}`}
                     >
                         <span className="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
@@ -423,41 +434,41 @@ const TTSPage: React.FC = () => {
                         </svg>
                     </button>
 
-                    {/* Collapsible Settings Area - Fixed height to prevent layout shift */}
+                    {/* Collapsible Settings Area - No nested scroll on mobile */}
                     {isSettingsOpen && (
                         <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
 
-                            {/* Voice Selection */}
-                            <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
+                            {/* Voice Selection - No internal scroll, shows all */}
+                            <div className="bg-slate-800/50 p-4 md:p-5 rounded-2xl border border-white/10">
                                 <h3 className="text-base font-bold text-slate-200 mb-4">دەنگ هەڵبژێرە</h3>
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                <div className="grid grid-cols-1 gap-2">
                                     {AVAILABLE_VOICES.map((voice) => (
-                                        <button key={voice.id} onClick={() => setSelectedVoice(voice)} className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${selectedVoice.id === voice.id ? 'bg-indigo-600/20 border-indigo-500/50 ring-1 ring-indigo-500/50' : 'bg-slate-900/40 border-slate-700/50'}`}>
+                                        <button key={voice.id} onClick={() => setSelectedVoice(voice)} className={`w-full flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all active:scale-[0.98] ${selectedVoice.id === voice.id ? 'bg-indigo-600/20 border-indigo-500/50 ring-1 ring-indigo-500/50' : 'bg-slate-900/40 border-slate-700/50'}`}>
                                             <div className="flex flex-col items-start text-right">
                                                 <span className="font-bold text-base text-white">{voice.name}</span>
                                                 <span className="text-xs text-slate-400 mt-1">{voice.description}</span>
                                             </div>
-                                            {selectedVoice.id === voice.id && <div className="w-2 h-2 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)] shrink-0 mr-2"></div>}
+                                            {selectedVoice.id === voice.id && <div className="w-3 h-3 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)] shrink-0 mr-2"></div>}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Tone & Speed */}
-                            <div className="bg-slate-800/50 p-5 rounded-2xl border border-white/10">
+                            {/* Tone - No internal scroll, shows all */}
+                            <div className="bg-slate-800/50 p-4 md:p-5 rounded-2xl border border-white/10">
                                 <h3 className="text-base font-bold text-slate-200 mb-4">شێواز</h3>
-                                <div className="grid grid-cols-2 gap-2 mb-6 max-h-40 overflow-y-auto custom-scrollbar">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
                                     {AVAILABLE_TONES.map((tone) => (
-                                        <button key={tone.name} onClick={() => setSelectedTone(tone)} className={`text-right p-2.5 rounded-lg border transition-all ${selectedTone.name === tone.name ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
-                                            <div className="font-medium text-xs md:text-sm">{tone.name}</div>
+                                        <button key={tone.name} onClick={() => setSelectedTone(tone)} className={`text-right p-3 rounded-lg border transition-all active:scale-[0.98] ${selectedTone.name === tone.name ? 'bg-soran-600/20 border-soran-500/50 text-white' : 'bg-slate-900/40 border-slate-700/50 text-slate-400'}`}>
+                                            <div className="font-medium text-sm">{tone.name}</div>
                                         </button>
                                     ))}
                                 </div>
 
                                 <h3 className="text-base font-bold text-slate-200 mb-4">خێرایی</h3>
-                                <div className="flex gap-2 flex-wrap">
+                                <div className="grid grid-cols-3 gap-2">
                                     {AVAILABLE_SPEEDS.map((speed) => (
-                                        <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all min-w-[60px] ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
+                                        <button key={speed.name} onClick={() => setSelectedSpeed(speed)} className={`py-3 px-3 rounded-lg text-sm font-medium transition-all active:scale-[0.98] ${selectedSpeed.name === speed.name ? 'bg-soran-600 text-white' : 'bg-slate-900/60 text-slate-400'}`}>{speed.name}</button>
                                     ))}
                                 </div>
                             </div>
@@ -467,9 +478,10 @@ const TTSPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* Left Column: Output - Fixed width */}
-            <section className="flex flex-col gap-6 overflow-y-auto custom-scrollbar">
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group shrink-0">
+            {/* Output Section - Flows after controls on mobile */}
+            <section className="flex flex-col gap-4 lg:gap-6">
+                {/* Generate Button - Desktop only (shown in controls section on mobile) */}
+                <div className="hidden lg:block bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden group">
                     <div className="absolute top-0 left-0 -ml-16 -mt-16 w-32 h-32 bg-soran-500/20 blur-3xl rounded-full group-hover:bg-soran-500/30 transition-all duration-700"></div>
                     <button onClick={handleGenerate} disabled={status === TTSStatus.GENERATING || !text} className={`w-full relative py-4 rounded-xl font-bold text-xl tracking-wide shadow-lg transition-all duration-300 flex items-center justify-center gap-3 overflow-hidden ${status === TTSStatus.GENERATING || !text ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-soran-600 text-white hover:scale-[1.02]'}`}>
                         {status === TTSStatus.GENERATING ? <span className="font-kurdish flex items-center gap-2">جێبەجێکردن... {bgProcessing > 0 && `(${bgProcessing})`}</span> : <span className="font-kurdish">دروستکردنی دەنگ</span>}
@@ -477,40 +489,50 @@ const TTSPage: React.FC = () => {
                     {errorMsg && <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-200 text-sm text-center font-kurdish">{errorMsg}</div>}
                 </div>
 
-                <div className={`transition-all duration-500 shrink-0 ${audioBuffer ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-4 pointer-events-none grayscale'}`}>
-                    <div className="bg-slate-800/80 p-6 rounded-3xl border border-white/10 backdrop-blur-md shadow-lg">
+                {/* Audio Player */}
+                <div className={`transition-all duration-500 ${audioBuffer ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-4 pointer-events-none grayscale'}`}>
+                    <div className="bg-slate-800/80 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/10 backdrop-blur-md shadow-lg">
                         <div className="flex justify-between items-end mb-4">
-                            <div className="text-right"><h4 className="text-white font-bold text-lg">پێشبینینی دەنگ</h4><p className="text-xs text-slate-400 mt-1 font-sans">{selectedVoice.name}</p></div>
+                            <div className="text-right"><h4 className="text-white font-bold text-base md:text-lg">پێشبینینی دەنگ</h4><p className="text-xs text-slate-400 mt-1 font-sans">{selectedVoice.name}</p></div>
                             {status === TTSStatus.PLAYING && <span className="flex h-3 w-3 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-soran-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-soran-500"></span></span>}
                         </div>
 
                         {/* Highlighted Text Display */}
                         {(status === TTSStatus.PLAYING || currentText) && <HighlightedTextDisplay />}
 
-                        <div className="bg-slate-900/50 rounded-xl p-2 mb-4 border border-white/5 h-24 flex items-center justify-center relative overflow-hidden">
+                        <div className="bg-slate-900/50 rounded-xl p-2 mb-4 border border-white/5 h-20 md:h-24 flex items-center justify-center relative overflow-hidden">
                             <Waveform analyser={analyser} isPlaying={status === TTSStatus.PLAYING} color="#38bdf8" />
                         </div>
-                        <div className="flex gap-4 mb-6">
-                            {/* Controls */}
-                            <div className="flex-1 bg-slate-900/40 p-2 rounded-lg border border-white/5 flex flex-col items-center"><span className="text-[10px] text-slate-400 mb-1">SPEED</span><input type="range" min="0.5" max="2" step="0.25" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))} className="w-full h-1 bg-slate-700 rounded-full" /></div>
-                            <div className="flex-1 bg-slate-900/40 p-2 rounded-lg border border-white/5 flex flex-col items-center"><span className="text-[10px] text-slate-400 mb-1">VOL</span><input type="range" min="0" max="1" step="0.1" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-1 bg-slate-700 rounded-full" /></div>
+
+                        {/* Controls - Stacked on mobile for easier touch */}
+                        <div className="flex gap-3 md:gap-4 mb-4 md:mb-6">
+                            <div className="flex-1 bg-slate-900/40 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                                <span className="text-xs text-slate-400 mb-2">خێرایی</span>
+                                <input type="range" min="0.5" max="2" step="0.25" value={playbackSpeed} onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))} className="w-full h-2 bg-slate-700 rounded-full" />
+                            </div>
+                            <div className="flex-1 bg-slate-900/40 p-3 rounded-lg border border-white/5 flex flex-col items-center">
+                                <span className="text-xs text-slate-400 mb-2">دەنگ</span>
+                                <input type="range" min="0" max="1" step="0.1" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full h-2 bg-slate-700 rounded-full" />
+                            </div>
                         </div>
+
+                        {/* Play/Download Buttons - Larger touch targets */}
                         <div className="flex gap-3">
-                            <button onClick={status === TTSStatus.PLAYING ? stopAudio : () => playAudio(audioBuffer)} className={`flex-1 ${status === TTSStatus.PLAYING ? 'bg-slate-700 text-white' : 'bg-white text-slate-900'} py-3 rounded-xl font-bold transition-colors flex justify-center items-center gap-2`}>{status === TTSStatus.PLAYING ? 'وەستان' : 'لێدانەوە'}</button>
-                            <button onClick={() => handleDownload(audioBuffer)} className="w-14 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-xl text-slate-300 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                            <button onClick={status === TTSStatus.PLAYING ? stopAudio : () => playAudio(audioBuffer)} className={`flex-1 ${status === TTSStatus.PLAYING ? 'bg-slate-700 text-white' : 'bg-white text-slate-900'} py-4 rounded-xl font-bold transition-colors flex justify-center items-center gap-2 active:scale-[0.98]`}>{status === TTSStatus.PLAYING ? 'وەستان' : 'لێدانەوە'}</button>
+                            <button onClick={() => handleDownload(audioBuffer)} className="w-16 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-xl text-slate-300 transition-colors active:scale-[0.98]"><svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
                         </div>
                     </div>
                 </div>
 
-                {/* History - Always reserve space to prevent layout shift */}
-                <div className="bg-slate-800/40 p-4 rounded-3xl border border-white/5 min-h-[120px] shrink-0">
+                {/* History */}
+                <div className="bg-slate-800/40 p-4 rounded-2xl md:rounded-3xl border border-white/5">
                     <h4 className="text-slate-400 text-sm font-bold mb-3 px-2">دوایین بەرهەمەکان</h4>
                     {history.length > 0 ? (
                         <div className="space-y-2">
                             {history.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-xl hover:bg-slate-800 transition-colors group">
+                                <div key={item.id} className="flex items-center justify-between p-3 md:p-4 bg-slate-900/50 rounded-xl hover:bg-slate-800 transition-colors group active:scale-[0.98]">
                                     <div className="flex-1 min-w-0 ml-3"><p className="text-white text-sm truncate font-medium">{item.content}</p><p className="text-slate-500 text-xs">{item.voiceName}</p></div>
-                                    <div className="flex gap-2"><button onClick={() => playAudio(item.audioBuffer, item.content)} className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-soran-600 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg></button></div>
+                                    <button onClick={() => playAudio(item.audioBuffer, item.content)} className="p-3 text-slate-400 hover:text-white bg-slate-800 hover:bg-soran-600 rounded-lg active:scale-95"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg></button>
                                 </div>
                             ))}
                         </div>
